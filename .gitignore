@@ -1,0 +1,35 @@
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+.idea
+myreadme.md
+
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###
+API_KEY_IMPLEMENTATION_EXAMPLE.php
+API_SECURITY_PROPOSAL.md
+API_SECURITY_README.md
+DATABASE_SETUP.md
+FIX_PERSISTENT_ERROR.md
+INSTALL_NOTES.md
+REPOSITORY_DESCRIPTION.md
+MIGRATION_README.md
+SUMMARY.md
+composer.phar
+fix_database_platform.php
+fix_jwt_and_db.sh
+generate_app_secret.php
+specs/Copy of tariffs_13.02.2025.xlsx
+specs/~$Copy of tariffs_13.02.2025.xlsx
+specs/~$earthquake_zones.xlsx
+.env
+.editorconfig
+symfony.lock

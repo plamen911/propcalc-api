@@ -1,0 +1,10 @@
+POST https://127.0.0.1:8000/api/v1/insurance-policies
+Content-Type: application/json
+
+{
+    "settlement_id": 2399,
+    "estate_type_id": 1,
+    "estate_subtype_id": 2,
+    "distance_to_water_id": 1,
+    "area_sq_meters": 100
+}

@@ -1,0 +1,41 @@
+### List Insurance Clauses
+GET https://127.0.0.1:8000/api/v1/insurance-policies/admin/insurance-clauses
+
+### Update Insurance Clause
+PUT https://127.0.0.1:8000/api/v1/insurance-policies/admin/insurance-clauses/1
+Content-Type: application/json
+
+{
+    "name": "Updated Insurance Clause",
+    "tariff_number": 1.5,
+    "has_tariff_number": true,
+    "tariff_amount": 100.0,
+    "position": 1
+}
+
+### List Tariff Presets
+GET https://127.0.0.1:8000/api/v1/insurance-policies/admin/tariff-presets
+
+### Update Tariff Preset
+PUT https://127.0.0.1:8000/api/v1/insurance-policies/admin/tariff-presets/1
+Content-Type: application/json
+
+{
+    "name": "Updated Tariff Preset",
+    "active": true,
+    "position": 1
+}
+
+### List Tariff Preset Clauses
+GET https://127.0.0.1:8000/api/v1/insurance-policies/admin/tariff-preset-clauses
+
+### Update Tariff Preset Clause
+PUT https://127.0.0.1:8000/api/v1/insurance-policies/admin/tariff-preset-clauses/1
+Content-Type: application/json
+
+{
+    "tariff_preset_id": 1,
+    "insurance_clause_id": 1,
+    "tariff_amount": 150.0,
+    "position": 1
+}
