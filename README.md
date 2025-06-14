@@ -2,6 +2,9 @@
 
 This is the API module for the Estate Calculator application. It provides the backend services for the admin and client modules.
 
+## Live Demo
+Check out the live application: [https://propcalc-dy7.pages.dev/](https://propcalc-dy7.pages.dev/)
+
 ## Key Features
 
 - Real estate insurance policy calculation and management
