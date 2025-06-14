@@ -17,8 +17,8 @@ class EmailService
     private MailerInterface $mailer;
     private ParameterBagInterface $params;
     private LoggerInterface $logger;
-    //private string $adminEmail = 'teodor_daike@abv.bg';
-    private string $adminEmail = 'plamen326@gmail.com';
+    private string $adminEmail = 'general@zastrahovaite.com';
+    //private string $adminEmail = 'plamen326@gmail.com';
 
     public function __construct(
         MailerInterface $mailer,
