@@ -38,6 +38,9 @@ class InsuranceClause
     #[ORM\Column(name: 'allow_custom_amount', type: 'boolean')]
     private bool $allowCustomAmount = false;
 
+    #[ORM\Column(type: 'boolean')]
+    private bool $active = true;
+
     #[ORM\Column(type: 'integer')]
     private ?int $position = null;
 
@@ -108,6 +111,18 @@ class InsuranceClause
     public function setAllowCustomAmount(bool $allowCustomAmount): static
     {
         $this->allowCustomAmount = $allowCustomAmount;
+
+        return $this;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
 
         return $this;
     }

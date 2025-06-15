@@ -41,6 +41,7 @@ class InsuranceClauseController extends AbstractController
                 'has_tariff_number' => $clause->getHasTariffNumber(),
                 'tariff_amount' => $clause->getTariffAmount(),
                 'position' => $clause->getPosition(),
+                'active' => $clause->isActive(),
             ];
         }
 
@@ -78,6 +79,15 @@ class InsuranceClauseController extends AbstractController
             $insuranceClause->setPosition($data['position']);
         }
 
+        if (isset($data['active'])) {
+            // Ensure that insurance clause with ID = 1 is always active
+            if ($id === 1) {
+                $insuranceClause->setActive(true);
+            } else {
+                $insuranceClause->setActive($data['active']);
+            }
+        }
+
         $errors = $this->validator->validate($insuranceClause);
 
         if (count($errors) > 0) {
@@ -98,6 +108,7 @@ class InsuranceClauseController extends AbstractController
             'has_tariff_number' => $insuranceClause->getHasTariffNumber(),
             'tariff_amount' => $insuranceClause->getTariffAmount(),
             'position' => $insuranceClause->getPosition(),
+            'active' => $insuranceClause->isActive(),
         ]);
     }
 }
