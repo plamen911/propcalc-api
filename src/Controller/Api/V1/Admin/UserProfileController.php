@@ -14,7 +14,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 /**
  * Controller for user profile management
  */
-#[Route('/api/v1/admin/profile', name: 'api_v1_admin_profile_')]
+#[Route('/api/v1/admin', name: 'api_v1_admin_')]
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
 class UserProfileController extends AbstractController
 {
@@ -30,9 +30,32 @@ class UserProfileController extends AbstractController
     }
 
     /**
+     * Get all users
+     */
+    #[Route('/users', name: 'users_list', methods: ['GET'])]
+    public function getAllUsers(): JsonResponse
+    {
+        $users = $this->userRepository->findAll();
+
+        $data = [];
+        foreach ($users as $user) {
+            $data[] = [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'firstName' => $user->getFirstName(),
+                'lastName' => $user->getLastName(),
+                'fullName' => $user->getFullName(),
+                'roles' => $user->getRoles(),
+            ];
+        }
+
+        return $this->json($data);
+    }
+
+    /**
      * Get current user profile
      */
-    #[Route('', name: 'get', methods: ['GET'])]
+    #[Route('/profile', name: 'profile_get', methods: ['GET'])]
     public function getProfile(): JsonResponse
     {
         /** @var User $user */
@@ -50,7 +73,7 @@ class UserProfileController extends AbstractController
     /**
      * Update user profile
      */
-    #[Route('', name: 'update', methods: ['PUT'])]
+    #[Route('/profile', name: 'profile_update', methods: ['PUT'])]
     public function updateProfile(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
