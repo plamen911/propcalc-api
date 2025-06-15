@@ -99,7 +99,7 @@ class TariffPresetController extends AbstractController
                 if (isset($clauseData['insurance_clause']['id'])) {
                     $insuranceClause = $this->insuranceClauseRepository->find($clauseData['insurance_clause']['id']);
 
-                    if ($insuranceClause) {
+                    if ($insuranceClause && $insuranceClause->isActive()) {
                         $tariffPresetClause = new TariffPresetClause();
                         $tariffPresetClause->setTariffPreset($tariffPreset);
                         $tariffPresetClause->setInsuranceClause($insuranceClause);
@@ -118,10 +118,9 @@ class TariffPresetController extends AbstractController
             }
         }
 
-        // Get created tariff preset with clauses
-        $tariffPresetClauses = $this->tariffPresetClauseRepository->findBy(
-            ['tariffPreset' => $tariffPreset],
-            ['position' => 'ASC']
+        // Get created tariff preset with clauses (only active insurance clauses)
+        $tariffPresetClauses = $this->tariffPresetClauseRepository->findByTariffPresetWithActiveInsuranceClauses(
+            $tariffPreset
         );
 
         $responseData = [
@@ -198,10 +197,9 @@ class TariffPresetController extends AbstractController
             }
         }
 
-        // Get updated tariff preset with clauses
-        $tariffPresetClauses = $this->tariffPresetClauseRepository->findBy(
-            ['tariffPreset' => $tariffPreset],
-            ['position' => 'ASC']
+        // Get updated tariff preset with clauses (only active insurance clauses)
+        $tariffPresetClauses = $this->tariffPresetClauseRepository->findByTariffPresetWithActiveInsuranceClauses(
+            $tariffPreset
         );
 
         $responseData = [
@@ -250,7 +248,7 @@ class TariffPresetController extends AbstractController
     #[Route('/tariff-preset-clauses', name: 'tariff_preset_clauses_list', methods: ['GET'])]
     public function listTariffPresetClauses(): JsonResponse
     {
-        $tariffPresetClauses = $this->tariffPresetClauseRepository->findAll();
+        $tariffPresetClauses = $this->tariffPresetClauseRepository->findAllWithActiveInsuranceClauses();
 
         $data = [];
         foreach ($tariffPresetClauses as $clause) {

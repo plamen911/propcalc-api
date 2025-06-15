@@ -286,8 +286,8 @@ class InsurancePolicyController extends AbstractController
 
         // Handle insurance policy clauses
         if ($tariffPreset) {
-            // If the tariff selection is from a preset, loop through tariff_preset_clauses
-            $tariffPresetClauses = $this->tariffPresetClauseRepository->findBy(['tariffPreset' => $tariffPreset]);
+            // If the tariff selection is from a preset, loop through tariff_preset_clauses (only active insurance clauses)
+            $tariffPresetClauses = $this->tariffPresetClauseRepository->findByTariffPresetWithActiveInsuranceClauses($tariffPreset);
             foreach ($tariffPresetClauses as $tariffPresetClause) {
                 $insuranceClause = $tariffPresetClause->getInsuranceClause();
 

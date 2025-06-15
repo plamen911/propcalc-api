@@ -42,7 +42,9 @@ class TariffPresetClauseRepository extends ServiceEntityRepository
             ->leftJoin('tpc.tariffPreset', 'tp')
             ->leftJoin('tpc.insuranceClause', 'ic')
             ->where('tpc.tariffPreset IN (:presetIds)')
+            ->andWhere('ic.active = :active')
             ->setParameter('presetIds', $presetIds)
+            ->setParameter('active', true)
             ->orderBy('tpc.position', 'ASC');
 
         $clauses = $qb->getQuery()->getResult();
@@ -76,5 +78,49 @@ class TariffPresetClauseRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    /**
+     * Find all tariff preset clauses with active insurance clauses
+     *
+     * @return array Array of TariffPresetClause objects
+     */
+    public function findAllWithActiveInsuranceClauses(): array
+    {
+        $qb = $this->createQueryBuilder('tpc')
+            ->addSelect('tp', 'ic')
+            ->leftJoin('tpc.tariffPreset', 'tp')
+            ->leftJoin('tpc.insuranceClause', 'ic')
+            ->where('ic.active = :active')
+            ->setParameter('active', true)
+            ->orderBy('tpc.position', 'ASC');
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Find tariff preset clauses by tariff preset with active insurance clauses
+     *
+     * @param TariffPreset $tariffPreset The tariff preset to find clauses for
+     * @param array $orderBy Optional ordering criteria
+     * @return array Array of TariffPresetClause objects
+     */
+    public function findByTariffPresetWithActiveInsuranceClauses($tariffPreset, array $orderBy = ['position' => 'ASC']): array
+    {
+        $qb = $this->createQueryBuilder('tpc')
+            ->addSelect('tp', 'ic')
+            ->leftJoin('tpc.tariffPreset', 'tp')
+            ->leftJoin('tpc.insuranceClause', 'ic')
+            ->where('tpc.tariffPreset = :tariffPreset')
+            ->andWhere('ic.active = :active')
+            ->setParameter('tariffPreset', $tariffPreset)
+            ->setParameter('active', true);
+
+        // Add ordering
+        foreach ($orderBy as $field => $direction) {
+            $qb->addOrderBy('tpc.' . $field, $direction);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }
