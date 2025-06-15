@@ -26,13 +26,19 @@ class CorsListener implements EventSubscriberInterface
         }
 
         $request = $event->getRequest();
+        $origin = $request->headers->get('Origin');
 
         // Handle preflight OPTIONS requests
         if ($request->getMethod() === 'OPTIONS') {
             $response = new Response();
-            $response->headers->set('Access-Control-Allow-Origin', '*');
+            if ($origin) {
+                $response->headers->set('Access-Control-Allow-Origin', $origin);
+            } else {
+                $response->headers->set('Access-Control-Allow-Origin', '*');
+            }
             $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
             $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            $response->headers->set('Access-Control-Allow-Credentials', 'true');
             $response->headers->set('Access-Control-Max-Age', '3600');
 
             // Allow the preflight request to pass
@@ -42,9 +48,17 @@ class CorsListener implements EventSubscriberInterface
 
     public function onKernelResponse(ResponseEvent $event): void
     {
+        $request = $event->getRequest();
+        $origin = $request->headers->get('Origin');
+
         $response = $event->getResponse();
-        $response->headers->set('Access-Control-Allow-Origin', '*');
+        if ($origin) {
+            $response->headers->set('Access-Control-Allow-Origin', $origin);
+        } else {
+            $response->headers->set('Access-Control-Allow-Origin', '*');
+        }
         $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        $response->headers->set('Access-Control-Allow-Credentials', 'true');
     }
 }
