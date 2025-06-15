@@ -105,7 +105,7 @@ class TariffPresetController extends AbstractController
                         $tariffPresetClause->setInsuranceClause($insuranceClause);
 
                         if (isset($clauseData['tariff_amount'])) {
-                            $tariffPresetClause->setTariffAmount($clauseData['tariff_amount']);
+                            $tariffPresetClause->setTariffAmount((float)$clauseData['tariff_amount']);
                         } else {
                             $tariffPresetClause->setTariffAmount(0);
                         }
@@ -190,7 +190,7 @@ class TariffPresetController extends AbstractController
                     $clause = $this->tariffPresetClauseRepository->find($clauseData['id']);
                     if ($clause && $clause->getTariffPreset()->getId() === $tariffPreset->getId()) {
                         if (isset($clauseData['tariff_amount'])) {
-                            $clause->setTariffAmount($clauseData['tariff_amount']);
+                            $clause->setTariffAmount((float)$clauseData['tariff_amount']);
                         }
                         $this->tariffPresetClauseRepository->save($clause, true);
                     }
@@ -301,7 +301,7 @@ class TariffPresetController extends AbstractController
         }
 
         if (isset($data['tariff_amount'])) {
-            $tariffPresetClause->setTariffAmount($data['tariff_amount']);
+            $tariffPresetClause->setTariffAmount((float)$data['tariff_amount']);
         }
 
         if (isset($data['position'])) {
