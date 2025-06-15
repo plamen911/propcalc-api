@@ -115,8 +115,8 @@ class AppConfigController extends AbstractController
 
         switch ($appConfig->getName()) {
             case 'CURRENCY':
-                if (!in_array($value, ['BGN', 'EUR'])) {
-                    throw new \InvalidArgumentException('Currency must be either BGN or EUR');
+                if (!in_array($value, ['лв.', '€'])) {
+                    throw new \InvalidArgumentException('Currency must be either лв. or €');
                 }
                 break;
             case 'DISCOUNT_PERCENTS':
