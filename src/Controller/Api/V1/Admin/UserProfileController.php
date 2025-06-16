@@ -30,12 +30,12 @@ class UserProfileController extends AbstractController
     }
 
     /**
-     * Get all users
+     * Get all users (excluding those with ROLE_ANONYMOUS)
      */
     #[Route('/users', name: 'users_list', methods: ['GET'])]
     public function getAllUsers(): JsonResponse
     {
-        $users = $this->userRepository->findAll();
+        $users = $this->userRepository->findAllExceptAnonymous();
 
         $data = [];
         foreach ($users as $user) {

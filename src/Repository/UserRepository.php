@@ -55,4 +55,20 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
 
         $this->save($user, true);
     }
+
+    /**
+     * Find all users excluding those with ROLE_ANONYMOUS
+     *
+     * @return User[]
+     */
+    public function findAllExceptAnonymous(): array
+    {
+        $qb = $this->createQueryBuilder('u');
+
+        return $qb
+            ->where('u.roles NOT LIKE :role')
+            ->setParameter('role', '%"ROLE_ANONYMOUS"%')
+            ->getQuery()
+            ->getResult();
+    }
 }
