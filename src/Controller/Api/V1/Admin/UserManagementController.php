@@ -46,7 +46,7 @@ class UserManagementController extends AbstractController
         $user = $this->userRepository->find($id);
 
         if (!$user) {
-            return $this->json(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['message' => 'Потребителят не е намерен'], Response::HTTP_NOT_FOUND);
         }
 
         return $this->json([
@@ -70,7 +70,7 @@ class UserManagementController extends AbstractController
         // Validate required fields
         if (!isset($data['email']) || !isset($data['password'])) {
             return $this->json([
-                'message' => 'Email and password are required',
+                'message' => 'Имейл и парола са задължителни',
             ], Response::HTTP_BAD_REQUEST);
         }
 
@@ -78,7 +78,7 @@ class UserManagementController extends AbstractController
         $existingUser = $this->userRepository->findOneBy(['email' => $data['email']]);
         if ($existingUser) {
             return $this->json([
-                'message' => 'Email is already taken',
+                'message' => 'Имейлът вече е зает',
             ], Response::HTTP_BAD_REQUEST);
         }
 
@@ -112,7 +112,7 @@ class UserManagementController extends AbstractController
         $this->userRepository->save($user, true);
 
         return $this->json([
-            'message' => 'User created successfully',
+            'message' => 'Потребителят е създаден успешно',
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
@@ -143,7 +143,7 @@ class UserManagementController extends AbstractController
             $existingUser = $this->userRepository->findOneBy(['email' => $data['email']]);
             if ($existingUser && $existingUser->getId() !== $user->getId()) {
                 return $this->json([
-                    'message' => 'Email is already taken',
+                    'message' => 'Имейлът вече е зает',
                 ], Response::HTTP_BAD_REQUEST);
             }
 
@@ -175,7 +175,7 @@ class UserManagementController extends AbstractController
         $this->userRepository->save($user, true);
 
         return $this->json([
-            'message' => 'User updated successfully',
+            'message' => 'Потребителят е обновен успешно',
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
@@ -202,13 +202,13 @@ class UserManagementController extends AbstractController
         // Don't allow deleting yourself
         if ($user->getId() === $this->getUser()->getId()) {
             return $this->json([
-                'message' => 'You cannot delete your own account',
+                'message' => 'Не можете да изтриете собствения си акаунт',
             ], Response::HTTP_BAD_REQUEST);
         }
 
         $this->userRepository->remove($user, true);
 
-        return $this->json(['message' => 'User deleted successfully']);
+        return $this->json(['message' => 'Потребителят е изтрит успешно']);
     }
 
     /**

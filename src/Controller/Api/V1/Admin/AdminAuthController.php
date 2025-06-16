@@ -43,7 +43,7 @@ class AdminAuthController extends AbstractController
 
         if (!isset($data['username']) || !isset($data['password'])) {
             return $this->json([
-                'message' => 'Username and password are required',
+                'message' => 'Потребителско име и парола са задължителни',
             ], JsonResponse::HTTP_BAD_REQUEST);
         }
 
@@ -55,21 +55,21 @@ class AdminAuthController extends AbstractController
 
         if (!$user) {
             return $this->json([
-                'message' => 'Invalid credentials',
+                'message' => 'Невалидни данни за вход',
             ], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
         // Check if user has ROLE_ADMIN
         if (!in_array('ROLE_ADMIN', $user->getRoles())) {
             return $this->json([
-                'message' => 'Access denied. Admin role required.',
+                'message' => 'Достъпът е отказан. Изисква се администраторска роля.',
             ], JsonResponse::HTTP_FORBIDDEN);
         }
 
         // Verify password
         if (!$this->passwordHasher->isPasswordValid($user, $password)) {
             return $this->json([
-                'message' => 'Invalid credentials',
+                'message' => 'Невалидни данни за вход',
             ], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
@@ -80,6 +80,7 @@ class AdminAuthController extends AbstractController
         return $this->json([
             'token' => $token,
             'user' => [
+                'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),
                 'fullName' => $user->getFullName(),

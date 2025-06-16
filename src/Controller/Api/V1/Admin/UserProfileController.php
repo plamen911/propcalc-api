@@ -95,7 +95,7 @@ class UserProfileController extends AbstractController
             $existingUser = $this->userRepository->findOneBy(['email' => $data['email']]);
             if ($existingUser && $existingUser->getId() !== $user->getId()) {
                 return $this->json([
-                    'message' => 'Email is already taken',
+                    'message' => 'Имейлът вече е зает',
                 ], JsonResponse::HTTP_BAD_REQUEST);
             }
 
@@ -112,7 +112,7 @@ class UserProfileController extends AbstractController
         $this->userRepository->save($user, true);
 
         return $this->json([
-            'message' => 'Profile updated successfully',
+            'message' => 'Профилът е обновен успешно',
             'user' => [
                 'email' => $user->getEmail(),
                 'firstName' => $user->getFirstName(),
