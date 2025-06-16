@@ -225,6 +225,46 @@ class PromotionalCodeController extends AbstractController
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
+    #[Route('/user/{userId}', name: 'by_user', methods: ['GET'])]
+    public function getByUser(int $userId): JsonResponse
+    {
+        $user = $this->userRepository->find($userId);
+
+        if (!$user) {
+            return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $promotionalCodes = $this->promotionalCodeRepository->findBy(['user' => $user]);
+
+        $data = [];
+        foreach ($promotionalCodes as $code) {
+            $userData = null;
+            if ($code->getUser()) {
+                $userData = [
+                    'id' => $code->getUser()->getId(),
+                    'email' => $code->getUser()->getEmail(),
+                    'full_name' => $code->getUser()->getFullName(),
+                ];
+            }
+
+            $data[] = [
+                'id' => $code->getId(),
+                'code' => $code->getCode(),
+                'description' => $code->getDescription(),
+                'discountPercentage' => $code->getDiscountPercentage(),
+                'validFrom' => $code->getValidFrom() ? $code->getValidFrom()->format('Y-m-d H:i:s') : null,
+                'validTo' => $code->getValidTo() ? $code->getValidTo()->format('Y-m-d H:i:s') : null,
+                'active' => $code->isActive(),
+                'usageLimit' => $code->getUsageLimit(),
+                'usageCount' => $code->getUsageCount(),
+                'isValid' => $code->isValid(),
+                'user' => $userData,
+            ];
+        }
+
+        return $this->json($data);
+    }
+
     private function updateEntityFromData(PromotionalCode $promotionalCode, array $data): void
     {
         if (isset($data['code'])) {
@@ -236,16 +276,24 @@ class PromotionalCodeController extends AbstractController
         }
 
         if (isset($data['discount_percentage'])) {
-            $promotionalCode->setDiscountPercentage($data['discount_percentage']);
+            $promotionalCode->setDiscountPercentage((float)$data['discount_percentage']);
+        } elseif (isset($data['discountPercentage'])) {
+            $promotionalCode->setDiscountPercentage((float)$data['discountPercentage']);
         }
 
         if (isset($data['valid_from'])) {
             $validFrom = $data['valid_from'] ? new \DateTime($data['valid_from']) : null;
             $promotionalCode->setValidFrom($validFrom);
+        } elseif (isset($data['validFrom'])) {
+            $validFrom = $data['validFrom'] ? new \DateTime($data['validFrom']) : null;
+            $promotionalCode->setValidFrom($validFrom);
         }
 
         if (isset($data['valid_to'])) {
             $validTo = $data['valid_to'] ? new \DateTime($data['valid_to']) : null;
+            $promotionalCode->setValidTo($validTo);
+        } elseif (isset($data['validTo'])) {
+            $validTo = $data['validTo'] ? new \DateTime($data['validTo']) : null;
             $promotionalCode->setValidTo($validTo);
         }
 
@@ -255,10 +303,14 @@ class PromotionalCodeController extends AbstractController
 
         if (isset($data['usage_limit'])) {
             $promotionalCode->setUsageLimit($data['usage_limit']);
+        } elseif (isset($data['usageLimit'])) {
+            $promotionalCode->setUsageLimit($data['usageLimit']);
         }
 
         if (isset($data['usage_count'])) {
             $promotionalCode->setUsageCount($data['usage_count']);
+        } elseif (isset($data['usageCount'])) {
+            $promotionalCode->setUsageCount($data['usageCount']);
         }
 
         if (isset($data['user_id'])) {
@@ -266,6 +318,15 @@ class PromotionalCodeController extends AbstractController
                 $promotionalCode->setUser(null);
             } else {
                 $user = $this->userRepository->find($data['user_id']);
+                if ($user) {
+                    $promotionalCode->setUser($user);
+                }
+            }
+        } elseif (isset($data['user'])) {
+            if ($data['user'] === null) {
+                $promotionalCode->setUser(null);
+            } elseif (isset($data['user']['id'])) {
+                $user = $this->userRepository->find($data['user']['id']);
                 if ($user) {
                     $promotionalCode->setUser($user);
                 }
