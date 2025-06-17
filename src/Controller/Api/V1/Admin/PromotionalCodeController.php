@@ -267,7 +267,8 @@ class PromotionalCodeController extends AbstractController
 
     private function updateEntityFromData(PromotionalCode $promotionalCode, array $data): void
     {
-        if (isset($data['code'])) {
+        // Only set code if it's a new promotional code (no ID yet)
+        if (isset($data['code']) && $promotionalCode->getId() === null) {
             $promotionalCode->setCode($data['code']);
         }
 
@@ -275,10 +276,13 @@ class PromotionalCodeController extends AbstractController
             $promotionalCode->setDescription($data['description']);
         }
 
-        if (isset($data['discount_percentage'])) {
-            $promotionalCode->setDiscountPercentage((float)$data['discount_percentage']);
-        } elseif (isset($data['discountPercentage'])) {
-            $promotionalCode->setDiscountPercentage((float)$data['discountPercentage']);
+        // Only set discount percentage if it's a new promotional code (no ID yet)
+        if ($promotionalCode->getId() === null) {
+            if (isset($data['discount_percentage'])) {
+                $promotionalCode->setDiscountPercentage((float)$data['discount_percentage']);
+            } elseif (isset($data['discountPercentage'])) {
+                $promotionalCode->setDiscountPercentage((float)$data['discountPercentage']);
+            }
         }
 
         if (isset($data['valid_from'])) {
