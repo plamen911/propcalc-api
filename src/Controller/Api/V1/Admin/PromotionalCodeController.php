@@ -135,7 +135,7 @@ class PromotionalCodeController extends AbstractController
         $promotionalCode = $this->promotionalCodeRepository->find((int)$id);
 
         if (!$promotionalCode) {
-            return $this->json(['error' => 'Promotional code not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Промоционалният код не е намерен'], Response::HTTP_NOT_FOUND);
         }
 
         $userData = null;
@@ -168,7 +168,7 @@ class PromotionalCodeController extends AbstractController
         $promotionalCode = $this->promotionalCodeRepository->find($id);
 
         if (!$promotionalCode) {
-            return $this->json(['error' => 'Promotional code not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Промоционалният код не е намерен'], Response::HTTP_NOT_FOUND);
         }
 
         $data = json_decode($request->getContent(), true);
@@ -217,7 +217,7 @@ class PromotionalCodeController extends AbstractController
         $promotionalCode = $this->promotionalCodeRepository->find($id);
 
         if (!$promotionalCode) {
-            return $this->json(['error' => 'Promotional code not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Промоционалният код не е намерен'], Response::HTTP_NOT_FOUND);
         }
 
         $this->promotionalCodeRepository->remove($promotionalCode, true);
@@ -231,7 +231,7 @@ class PromotionalCodeController extends AbstractController
         $user = $this->userRepository->find($userId);
 
         if (!$user) {
-            return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Потребителят не е намерен'], Response::HTTP_NOT_FOUND);
         }
 
         $promotionalCodes = $this->promotionalCodeRepository->findBy(['user' => $user]);
