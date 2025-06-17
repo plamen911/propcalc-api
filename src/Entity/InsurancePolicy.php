@@ -98,6 +98,13 @@ class InsurancePolicy
     #[ORM\Column(name: 'tariff_preset_name', type: 'string', length: 255, nullable: true)]
     private ?string $tariffPresetName = null;
 
+    #[ORM\ManyToOne(targetEntity: PromotionalCode::class)]
+    #[ORM\JoinColumn(name: 'promotional_code_id', referencedColumnName: 'id', nullable: true)]
+    private ?PromotionalCode $promotionalCode = null;
+
+    #[ORM\Column(name: 'promotional_code_discount', type: 'float', nullable: true)]
+    private ?float $promotionalCodeDiscount = null;
+
     #[ORM\Column(name: 'code', type: 'string', length: 50, unique: true)]
     private ?string $code = null;
 
@@ -487,6 +494,30 @@ class InsurancePolicy
                 $checklist->setInsurancePolicy(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getPromotionalCode(): ?PromotionalCode
+    {
+        return $this->promotionalCode;
+    }
+
+    public function setPromotionalCode(?PromotionalCode $promotionalCode): static
+    {
+        $this->promotionalCode = $promotionalCode;
+
+        return $this;
+    }
+
+    public function getPromotionalCodeDiscount(): ?float
+    {
+        return $this->promotionalCodeDiscount;
+    }
+
+    public function setPromotionalCodeDiscount(?float $promotionalCodeDiscount): static
+    {
+        $this->promotionalCodeDiscount = $promotionalCodeDiscount;
 
         return $this;
     }

@@ -14,29 +14,41 @@ class Settlement
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
     private ?string $name = null;
 
-    #[ORM\Column(type: 'string', length: 20)]
-    private ?string $postCode = null;
+    #[ORM\Column(type: 'string', length: 255)]
+    private ?string $nameEn = null;
+
+    #[ORM\Column(type: 'string', length: 255)]
+    private ?string $slug = null;
+
+    #[ORM\Column(type: 'string', length: 60)]
+    private ?string $lat = null;
+
+    #[ORM\Column(type: 'string', length: 60)]
+    private ?string $lng = null;
+
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $postCode = null;
 
     #[ORM\ManyToOne(targetEntity: Region::class)]
-    #[ORM\JoinColumn(name: 'region_id', referencedColumnName: 'id', nullable: false)]
+    #[ORM\JoinColumn(name: 'region_id', referencedColumnName: 'id', nullable: true, columnDefinition: 'INT')]
     private ?Region $region = null;
 
     #[ORM\ManyToOne(targetEntity: Municipality::class)]
-    #[ORM\JoinColumn(name: 'municipality_id', referencedColumnName: 'id', nullable: false)]
+    #[ORM\JoinColumn(name: 'municipality_id', referencedColumnName: 'id', nullable: true, columnDefinition: 'INT')]
     private ?Municipality $municipality = null;
 
     #[ORM\ManyToOne(targetEntity: Type::class)]
-    #[ORM\JoinColumn(name: 'type_id', referencedColumnName: 'id', nullable: false)]
+    #[ORM\JoinColumn(name: 'type_id', referencedColumnName: 'id', nullable: true, columnDefinition: 'INT')]
     private ?Type $type = null;
 
     #[ORM\ManyToOne(targetEntity: EarthquakeZone::class)]
-    #[ORM\JoinColumn(name: 'earthquake_zone_id', referencedColumnName: 'id', nullable: false)]
+    #[ORM\JoinColumn(name: 'earthquake_zone_id', referencedColumnName: 'id', nullable: true, columnDefinition: 'INT')]
     private ?EarthquakeZone $earthquakeZone = null;
 
     public function getId(): ?int
@@ -56,12 +68,12 @@ class Settlement
         return $this;
     }
 
-    public function getPostCode(): ?string
+    public function getPostCode(): ?int
     {
         return $this->postCode;
     }
 
-    public function setPostCode(string $postCode): static
+    public function setPostCode(int $postCode): static
     {
         $this->postCode = $postCode;
 
@@ -112,6 +124,54 @@ class Settlement
     public function setEarthquakeZone(?EarthquakeZone $earthquakeZone): static
     {
         $this->earthquakeZone = $earthquakeZone;
+
+        return $this;
+    }
+
+    public function getNameEn(): ?string
+    {
+        return $this->nameEn;
+    }
+
+    public function setNameEn(?string $nameEn): static
+    {
+        $this->nameEn = $nameEn;
+
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(?string $slug): static
+    {
+        $this->slug = $slug;
+
+        return $this;
+    }
+
+    public function getLat(): ?string
+    {
+        return $this->lat;
+    }
+
+    public function setLat(?string $lat): static
+    {
+        $this->lat = $lat;
+
+        return $this;
+    }
+
+    public function getLng(): ?string
+    {
+        return $this->lng;
+    }
+
+    public function setLng(?string $lng): static
+    {
+        $this->lng = $lng;
 
         return $this;
     }

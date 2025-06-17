@@ -13,7 +13,7 @@ class Municipality
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -26,7 +26,7 @@ class Municipality
     private ?string $slug = null;
 
     #[ORM\ManyToOne(targetEntity: Region::class)]
-    #[ORM\JoinColumn(name: 'region_id', referencedColumnName: 'id', nullable: false)]
+    #[ORM\JoinColumn(name: 'region_id', referencedColumnName: 'id', nullable: true, columnDefinition: 'INT')]
     private ?Region $region = null;
 
     public function getId(): ?int

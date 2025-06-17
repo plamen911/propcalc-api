@@ -20,6 +20,7 @@ use App\Repository\TariffPresetRepository;
 use App\Repository\TariffPresetClauseRepository;
 use App\Repository\InsuranceClauseRepository;
 use App\Repository\InsurancePolicyClauseRepository;
+use App\Repository\PromotionalCodeRepository;
 use App\Service\EmailService;
 use Doctrine\ORM\Exception\ORMException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -46,6 +47,7 @@ class InsurancePolicyController extends AbstractController
     private TariffPresetClauseRepository $tariffPresetClauseRepository;
     private InsuranceClauseRepository $insuranceClauseRepository;
     private InsurancePolicyClauseRepository $insurancePolicyClauseRepository;
+    private PromotionalCodeRepository $promotionalCodeRepository;
     private ValidatorInterface $validator;
     private EmailService $emailService;
 
@@ -63,6 +65,7 @@ class InsurancePolicyController extends AbstractController
         TariffPresetClauseRepository $tariffPresetClauseRepository,
         InsuranceClauseRepository $insuranceClauseRepository,
         InsurancePolicyClauseRepository $insurancePolicyClauseRepository,
+        PromotionalCodeRepository $promotionalCodeRepository,
         ValidatorInterface        $validator,
         EmailService              $emailService
     ) {
@@ -79,6 +82,7 @@ class InsurancePolicyController extends AbstractController
         $this->tariffPresetClauseRepository = $tariffPresetClauseRepository;
         $this->insuranceClauseRepository = $insuranceClauseRepository;
         $this->insurancePolicyClauseRepository = $insurancePolicyClauseRepository;
+        $this->promotionalCodeRepository = $promotionalCodeRepository;
         $this->validator = $validator;
         $this->emailService = $emailService;
     }
@@ -178,6 +182,17 @@ class InsurancePolicyController extends AbstractController
             }
         }
 
+        // Validate promotional_code_id if provided
+        $promotionalCode = null;
+        if (isset($data['promotional_code_id'])) {
+            $promotionalCode = $this->promotionalCodeRepository->find($data['promotional_code_id']);
+            if (!$promotionalCode) {
+                $errors[] = sprintf('Promotional code with ID %d not found.', $data['promotional_code_id']);
+            } else if (!$promotionalCode->isValid()) {
+                $errors[] = 'The promotional code is no longer valid.';
+            }
+        }
+
         // Validate gender if provided
         if (isset($data['gender']) && !in_array($data['gender'], ['male', 'female'])) {
             $errors[] = 'Gender must be either "male" or "female".';
@@ -261,6 +276,22 @@ class InsurancePolicyController extends AbstractController
             // If the selected a custom tariff
             $insurancePolicy->setTariffPreset(null);
             $insurancePolicy->setTariffPresetName('Пакет по избор');
+        }
+
+        // Handle promotional code logic
+        if ($promotionalCode) {
+            $insurancePolicy->setPromotionalCode($promotionalCode);
+
+            // Set the promotional code discount from the request or from the promotional code
+            if (isset($data['promotional_code_discount'])) {
+                $insurancePolicy->setPromotionalCodeDiscount((float)$data['promotional_code_discount']);
+            } else {
+                $insurancePolicy->setPromotionalCodeDiscount($promotionalCode->getDiscountPercentage());
+            }
+
+            // Increment the usage count of the promotional code
+            $promotionalCode->incrementUsageCount();
+            $this->promotionalCodeRepository->save($promotionalCode, true);
         }
 
         // Set a temporary code to satisfy the NOT NULL constraint
@@ -374,6 +405,13 @@ class InsurancePolicyController extends AbstractController
         // Add tariff_preset_name to the response if it's set
         if ($insurancePolicy->getTariffPresetName() !== null) {
             $response['tariff_preset_name'] = $insurancePolicy->getTariffPresetName();
+        }
+
+        // Add promotional code information to the response if it's set
+        if ($insurancePolicy->getPromotionalCode()) {
+            $response['promotional_code_id'] = $insurancePolicy->getPromotionalCode()->getId();
+            $response['promotional_code'] = $insurancePolicy->getPromotionalCode()->getCode();
+            $response['promotional_code_discount'] = $insurancePolicy->getPromotionalCodeDiscount();
         }
 
         // Add property checklist items to the response

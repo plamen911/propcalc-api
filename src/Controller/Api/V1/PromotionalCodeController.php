@@ -54,6 +54,7 @@ class PromotionalCodeController extends AbstractController
 
         return $this->json([
             'valid' => true,
+            'id' => $promotionalCode->getId(),
             'discountPercentage' => $promotionalCode->getDiscountPercentage(),
             'message' => 'Промоционалният код е валиден'
         ]);
