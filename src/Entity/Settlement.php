@@ -178,7 +178,13 @@ class Settlement
 
     public function getFullName(): ?string
     {
-        return $this->getType()->getName().' '. $this->getName().' (' .'Общ. '.$this->getMunicipality()->getName()
+        $fullName = $this->getType()->getName().' '. $this->getName().' (' .'Общ. '.$this->getMunicipality()->getName()
             .', Обл. '.$this->getRegion()->getName() .')';
+
+        if ($this->getPostCode()) {
+            $fullName .= ', ' . $this->getPostCode();
+        }
+
+        return $fullName;
     }
 }

@@ -105,7 +105,7 @@ class InsurancePolicyController extends AbstractController
 
         foreach ($requiredFields as $field) {
             if (!isset($data[$field])) {
-                $errors[] = sprintf('The field "%s" is required.', $field);
+                $errors[] = sprintf('Полето "%s" е задължително.', $field);
             }
         }
 
@@ -116,61 +116,61 @@ class InsurancePolicyController extends AbstractController
         // Validate settlement_id
         $settlement = $this->settlementRepository->find($data['settlement_id']);
         if (!$settlement) {
-            $errors[] = sprintf('Settlement with ID %d not found.', $data['settlement_id']);
+            $errors[] = sprintf('Населено място с ID %d не е намерено.', $data['settlement_id']);
         }
 
         // Validate estate_type_id
         $estateType = $this->estateTypeRepository->find($data['estate_type_id']);
         if (!$estateType) {
-            $errors[] = sprintf('Estate type with ID %d not found.', $data['estate_type_id']);
+            $errors[] = sprintf('Тип имот с ID %d не е намерен.', $data['estate_type_id']);
         }
 
         // Validate estate_subtype_id
         $estateSubtype = $this->estateTypeRepository->find($data['estate_subtype_id']);
         if (!$estateSubtype) {
-            $errors[] = sprintf('Estate subtype with ID %d not found.', $data['estate_subtype_id']);
+            $errors[] = sprintf('Подтип имот с ID %d не е намерен.', $data['estate_subtype_id']);
         }
 
         // Validate distance_to_water_id
         $distanceToWater = $this->waterDistanceRepository->find($data['distance_to_water_id']);
         if (!$distanceToWater) {
-            $errors[] = sprintf('Distance to water with ID %d not found.', $data['distance_to_water_id']);
+            $errors[] = sprintf('Разстояние до воден басейн с ID %d не е намерено.', $data['distance_to_water_id']);
         }
 
         // Validate person_role_id
         $personRole = $this->personRoleRepository->find($data['person_role_id']);
         if (!$personRole) {
-            $errors[] = sprintf('Person role with ID %d not found.', $data['person_role_id']);
+            $errors[] = sprintf('Роля на лице с ID %d не е намерена.', $data['person_role_id']);
         }
 
         // Validate id_number_type_id
         $idNumberType = $this->idNumberTypeRepository->find($data['id_number_type_id']);
         if (!$idNumberType) {
-            $errors[] = sprintf('ID number type with ID %d not found.', $data['id_number_type_id']);
+            $errors[] = sprintf('Тип на идентификационен номер с ID %d не е намерен.', $data['id_number_type_id']);
         }
 
         // Validate insurer_nationality_id if id_number_type_id is not 1
         if (isset($data['id_number_type_id']) && (int) $data['id_number_type_id'] != 1) {
             if (!isset($data['insurer_nationality_id'])) {
-                $errors[] = 'The field "insurer_nationality_id" is required when ID number type is not 1.';
+                $errors[] = 'Полето "insurer_nationality_id" е задължително, когато типът на идентификационния номер не е 1.';
             } else {
                 $insurerNationality = $this->nationalityRepository->find($data['insurer_nationality_id']);
                 if (!$insurerNationality) {
-                    $errors[] = sprintf('Nationality with ID %d not found.', $data['insurer_nationality_id']);
+                    $errors[] = sprintf('Националност с ID %d не е намерена.', $data['insurer_nationality_id']);
                 }
             }
         } elseif (isset($data['insurer_nationality_id']) && (int) $data['insurer_nationality_id'] != 0) {
             // Only validate insurer_nationality_id if it's provided and not 0 when id_number_type_id = 1
             $insurerNationality = $this->nationalityRepository->find($data['insurer_nationality_id']);
             if (!$insurerNationality) {
-                $errors[] = sprintf('Nationality with ID %d not found.', $data['insurer_nationality_id']);
+                $errors[] = sprintf('Националност с ID %d не е намерена.', $data['insurer_nationality_id']);
             }
         }
 
         // Validate insurer_settlement_id
         $insurerSettlement = $this->settlementRepository->find($data['insurer_settlement_id']);
         if (!$insurerSettlement) {
-            $errors[] = sprintf('Insurer settlement with ID %d not found.', $data['insurer_settlement_id']);
+            $errors[] = sprintf('Населено място на застраховащия с ID %d не е намерено.', $data['insurer_settlement_id']);
         }
 
         // Validate tariff_preset_id if provided
@@ -178,7 +178,7 @@ class InsurancePolicyController extends AbstractController
         if (isset($data['tariff_preset_id'])) {
             $tariffPreset = $this->tariffPresetRepository->find($data['tariff_preset_id']);
             if (!$tariffPreset) {
-                $errors[] = sprintf('Tariff preset with ID %d not found.', $data['tariff_preset_id']);
+                $errors[] = sprintf('Тарифен план с ID %d не е намерен.', $data['tariff_preset_id']);
             }
         }
 
@@ -187,21 +187,21 @@ class InsurancePolicyController extends AbstractController
         if (isset($data['promotional_code_id'])) {
             $promotionalCode = $this->promotionalCodeRepository->find($data['promotional_code_id']);
             if (!$promotionalCode) {
-                $errors[] = sprintf('Promotional code with ID %d not found.', $data['promotional_code_id']);
+                $errors[] = sprintf('Промоционален код с ID %d не е намерен.', $data['promotional_code_id']);
             } else if (!$promotionalCode->isValid()) {
-                $errors[] = 'The promotional code is no longer valid.';
+                $errors[] = 'Промоционалният код вече не е валиден.';
             }
         }
 
-        // Validate gender if provided
-        if (isset($data['gender']) && !in_array($data['gender'], ['male', 'female'])) {
-            $errors[] = 'Gender must be either "male" or "female".';
+        // Validate gender if provided and id_number_type_id != 1
+        if (isset($data['gender']) && isset($data['id_number_type_id']) && (int)$data['id_number_type_id'] != 1 && !in_array($data['gender'], ['male', 'female'])) {
+            $errors[] = 'Полът трябва да бъде "male" или "female".';
         }
 
         // Validate area_sq_meters range
         $areaSqMeters = $data['area_sq_meters'];
         if (!is_numeric($areaSqMeters) || $areaSqMeters < 0 || $areaSqMeters > 100000) {
-            $errors[] = 'Area in square meters must be a number between 0 and 100000.';
+            $errors[] = 'Площта в квадратни метри трябва да бъде число между 0 и 100000.';
         }
 
         if (!empty($errors)) {
@@ -245,7 +245,10 @@ class InsurancePolicyController extends AbstractController
             $insurancePolicy->setBirthDate(new \DateTime($data['birth_date']));
         }
 
-        if (isset($data['gender'])) {
+        // Set gender to null if id_number_type_id = 1, otherwise use the provided value
+        if (isset($data['id_number_type_id']) && $data['id_number_type_id'] == 1) {
+            $insurancePolicy->setGender(null);
+        } else if (isset($data['gender'])) {
             $insurancePolicy->setGender($data['gender']);
         }
 
@@ -259,6 +262,26 @@ class InsurancePolicyController extends AbstractController
 
         if (isset($data['email'])) {
             $insurancePolicy->setEmail($data['email']);
+        }
+
+        // Set property owner fields if provided
+        if (isset($data['property_address'])) {
+            $insurancePolicy->setPropertyAddress($data['property_address']);
+        }
+
+        if (isset($data['property_owner_name'])) {
+            $insurancePolicy->setPropertyOwnerName($data['property_owner_name']);
+        }
+
+        if (isset($data['property_owner_id_number'])) {
+            $insurancePolicy->setPropertyOwnerIdNumber($data['property_owner_id_number']);
+        }
+
+        if (isset($data['property_owner_id_number_type_id'])) {
+            $propertyOwnerIdNumberType = $this->idNumberTypeRepository->find($data['property_owner_id_number_type_id']);
+            if ($propertyOwnerIdNumberType) {
+                $insurancePolicy->setPropertyOwnerIdNumberType($propertyOwnerIdNumberType);
+            }
         }
 
         // Set financial fields based on the data from the request
@@ -467,6 +490,23 @@ class InsurancePolicyController extends AbstractController
 
         if ($insurancePolicy->getEmail() !== null) {
             $response['email'] = $insurancePolicy->getEmail();
+        }
+
+        // Add property owner fields if they are set
+        if ($insurancePolicy->getPropertyAddress() !== null) {
+            $response['property_address'] = $insurancePolicy->getPropertyAddress();
+        }
+
+        if ($insurancePolicy->getPropertyOwnerName() !== null) {
+            $response['property_owner_name'] = $insurancePolicy->getPropertyOwnerName();
+        }
+
+        if ($insurancePolicy->getPropertyOwnerIdNumber() !== null) {
+            $response['property_owner_id_number'] = $insurancePolicy->getPropertyOwnerIdNumber();
+        }
+
+        if ($insurancePolicy->getPropertyOwnerIdNumberType() !== null) {
+            $response['property_owner_id_number_type_id'] = $insurancePolicy->getPropertyOwnerIdNumberType()->getId();
         }
 
         // Load the insurance policy with its clauses before sending emails

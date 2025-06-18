@@ -13,11 +13,6 @@ use App\Entity\WaterDistance;
 #[ORM\HasLifecycleCallbacks]
 class InsurancePolicy
 {
-    public function __construct()
-    {
-        $this->insurancePolicyClauses = new ArrayCollection();
-        $this->insurancePolicyPropertyChecklists = new ArrayCollection();
-    }
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -63,6 +58,19 @@ class InsurancePolicy
     #[ORM\ManyToOne(targetEntity: Settlement::class)]
     #[ORM\JoinColumn(name: 'settlement_id', referencedColumnName: 'id')]
     private ?Settlement $settlement = null;
+
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $propertyAddress = null;
+
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $propertyOwnerName = null;
+
+    #[ORM\ManyToOne(targetEntity: IdNumberType::class)]
+    #[ORM\JoinColumn(name: 'property_owner_id_number_type_id', referencedColumnName: 'id')]
+    private ?IdNumberType $propertyOwnerIdNumberType = null;
+
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $propertyOwnerIdNumber = null;
 
     #[ORM\ManyToOne(targetEntity: EstateType::class)]
     #[ORM\JoinColumn(name: 'estate_type_id', referencedColumnName: 'id')]
@@ -119,6 +127,12 @@ class InsurancePolicy
 
     #[ORM\OneToMany(mappedBy: 'insurancePolicy', targetEntity: InsurancePolicyPropertyChecklist::class, cascade: ['persist', 'remove'])]
     private Collection $insurancePolicyPropertyChecklists;
+
+    public function __construct()
+    {
+        $this->insurancePolicyClauses = new ArrayCollection();
+        $this->insurancePolicyPropertyChecklists = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -434,6 +448,54 @@ class InsurancePolicy
     public function setEmail(?string $email): static
     {
         $this->email = $email;
+
+        return $this;
+    }
+
+    public function getPropertyAddress(): ?string
+    {
+        return $this->propertyAddress;
+    }
+
+    public function setPropertyAddress(?string $propertyAddress): static
+    {
+        $this->propertyAddress = $propertyAddress;
+
+        return $this;
+    }
+
+    public function getPropertyOwnerName(): ?string
+    {
+        return $this->propertyOwnerName;
+    }
+
+    public function setPropertyOwnerName(?string $propertyOwnerName): static
+    {
+        $this->propertyOwnerName = $propertyOwnerName;
+
+        return $this;
+    }
+
+    public function getPropertyOwnerIdNumberType(): ?IdNumberType
+    {
+        return $this->propertyOwnerIdNumberType;
+    }
+
+    public function setPropertyOwnerIdNumberType(?IdNumberType $propertyOwnerIdNumberType): static
+    {
+        $this->propertyOwnerIdNumberType = $propertyOwnerIdNumberType;
+
+        return $this;
+    }
+
+    public function getPropertyOwnerIdNumber(): ?string
+    {
+        return $this->propertyOwnerIdNumber;
+    }
+
+    public function setPropertyOwnerIdNumber(?string $propertyOwnerIdNumber): static
+    {
+        $this->propertyOwnerIdNumber = $propertyOwnerIdNumber;
 
         return $this;
     }

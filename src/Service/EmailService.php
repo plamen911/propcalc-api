@@ -99,6 +99,7 @@ class EmailService
         $personRole = $policy->getPersonRole();
         $idNumberType = $policy->getIdNumberType();
         $insurerSettlement = $policy->getInsurerSettlement();
+        $propertyOwnerIdNumberType = $policy->getPropertyOwnerIdNumberType();
 
         // Get policy clauses
         $policyClauses = $policy->getInsurancePolicyClauses();
@@ -218,7 +219,11 @@ class EmailService
                     <div class="section-title">Данни за имота</div>
                     <div class="item">
                         <span class="label">Населено място:</span>
-                        <span class="value">' . ($settlement ? $settlement->getName() : 'Не е посочено') . '</span>
+                        <span class="value">' . ($settlement ? $settlement->getFullName() : 'Не е посочено') . '</span>
+                    </div>
+                    <div class="item">
+                        <span class="label">Адрес на имота:</span>
+                        <span class="value">' . ($policy->getPropertyAddress() ? $policy->getPropertyAddress() : 'Не е посочено') . '</span>
                     </div>
                     <div class="item">
                         <span class="label">Тип имот:</span>
@@ -235,6 +240,14 @@ class EmailService
                     <div class="item">
                         <span class="label">РЗП:</span>
                         <span class="value">' . $policy->getAreaSqMeters() . ' кв.м.</span>
+                    </div>
+                    <div class="item">
+                        <span class="label">Имена на собственика:</span>
+                        <span class="value">' . ($policy->getPropertyOwnerName() ? $policy->getPropertyOwnerName() : 'Не е посочено') . '</span>
+                    </div>
+                    <div class="item">
+                        <span class="label">' . ($propertyOwnerIdNumberType ? $propertyOwnerIdNumberType->getName() : 'ЕГН/ЛНЧ/Паспорт №') . ':</span>
+                        <span class="value">' . ($policy->getPropertyOwnerIdNumber() ? $policy->getPropertyOwnerIdNumber() : 'Не е посочено') . '</span>
                     </div>';
 
         // Add property checklist items directly to the property information section
@@ -283,7 +296,7 @@ class EmailService
                     </div>
                     <div class="item">
                         <span class="label">Населено място:</span>
-                        <span class="value">' . ($insurerSettlement ? $insurerSettlement->getName() : 'Не е посочено') . '</span>
+                        <span class="value">' . ($insurerSettlement ? $insurerSettlement->getFullName() : 'Не е посочено') . '</span>
                     </div>
                     <div class="item">
                         <span class="label">Адрес:</span>
