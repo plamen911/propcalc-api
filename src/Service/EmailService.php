@@ -279,7 +279,7 @@ class EmailService
 
         $content .= '
                     <div class="item">
-                        <span class="label">Допълнителни данни за имота:</span>
+                        <span class="label">Допълнителни пояснения:</span>
                         <span class="value">' . ($policy->getPropertyAdditionalInfo() ? $policy->getPropertyAdditionalInfo() : 'Не е посочено') . '</span>
                     </div>';
 
