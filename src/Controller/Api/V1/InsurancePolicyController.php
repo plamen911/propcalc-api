@@ -355,6 +355,11 @@ class InsurancePolicyController extends AbstractController
         $insurancePolicy->setSubtotalTax(isset($data['subtotal_tax']) ? (float)$data['subtotal_tax'] : 0);
         $insurancePolicy->setTotal(isset($data['total']) ? (float)$data['total'] : 0);
 
+        // Set property additional info if it's provided
+        if (isset($data['property_additional_info'])) {
+            $insurancePolicy->setPropertyAdditionalInfo($data['property_additional_info']);
+        }
+
         // Handle tariff preset logic
         if ($tariffPreset) {
             // If the tariff selection is from a preset
@@ -587,11 +592,6 @@ class InsurancePolicyController extends AbstractController
         // Add property owner gender to the response if it's set
         if ($insurancePolicy->getPropertyOwnerGender() !== null) {
             $response['property_owner_gender'] = $insurancePolicy->getPropertyOwnerGender();
-        }
-
-        // Add property additional info if it's set
-        if (isset($data['property_additional_info'])) {
-            $insurancePolicy->setPropertyAdditionalInfo($data['property_additional_info']);
         }
 
         // Load the insurance policy with its clauses before sending emails
