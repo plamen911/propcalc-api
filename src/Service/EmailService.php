@@ -248,6 +248,10 @@ class EmailService
                     <div class="item">
                         <span class="label">' . ($propertyOwnerIdNumberType ? $propertyOwnerIdNumberType->getName() : 'ЕГН/ЛНЧ/Паспорт №') . ':</span>
                         <span class="value">' . ($policy->getPropertyOwnerIdNumber() ? $policy->getPropertyOwnerIdNumber() : 'Не е посочено') . '</span>
+                    </div>
+                    <div class="item">
+                        <span class="label">Допълнителни данни за имота:</span>
+                        <span class="value">' . ($policy->getPropertyAdditionalInfo() ? $policy->getPropertyAdditionalInfo() : 'Не е посочено') . '</span>
                     </div>';
 
         // Add property checklist items directly to the property information section

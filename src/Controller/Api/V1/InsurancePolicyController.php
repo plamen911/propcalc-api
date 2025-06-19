@@ -509,6 +509,11 @@ class InsurancePolicyController extends AbstractController
             $response['property_owner_id_number_type_id'] = $insurancePolicy->getPropertyOwnerIdNumberType()->getId();
         }
 
+        // Add property additional info if it's set
+        if (isset($data['property_additional_info'])) {
+            $insurancePolicy->setPropertyAdditionalInfo($data['property_additional_info']);
+        }
+
         // Load the insurance policy with its clauses before sending emails
         $entityManager = $this->insurancePolicyRepository->getEntityManager();
         $entityManager->refresh($insurancePolicy);
@@ -522,6 +527,11 @@ class InsurancePolicyController extends AbstractController
         } catch (\Exception $e) {
             // Just log the error, don't block the workflow
             // The error is already logged in the EmailService
+        }
+
+        // Add property additional info to the response if it's set
+        if ($insurancePolicy->getPropertyAdditionalInfo() !== null) {
+            $response['property_additional_info'] = $insurancePolicy->getPropertyAdditionalInfo();
         }
 
         return $this->json($response, Response::HTTP_CREATED);

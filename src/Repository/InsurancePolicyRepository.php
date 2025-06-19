@@ -268,7 +268,8 @@ class InsurancePolicyRepository extends ServiceEntityRepository
             ] : null,
             'promotionalCodeDiscount' => $policy->getPromotionalCodeDiscount(),
             'insurancePolicyClauses' => [],
-            'propertyChecklistItems' => []
+            'propertyChecklistItems' => [],
+            'propertyAdditionalInfo' => $policy->getPropertyAdditionalInfo(),
         ];
 
         // Add insurance policy clauses

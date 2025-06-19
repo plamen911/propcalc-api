@@ -128,6 +128,9 @@ class InsurancePolicy
     #[ORM\OneToMany(mappedBy: 'insurancePolicy', targetEntity: InsurancePolicyPropertyChecklist::class, cascade: ['persist', 'remove'])]
     private Collection $insurancePolicyPropertyChecklists;
 
+    #[ORM\Column(name: 'property_additional_info', type: 'string', nullable: true)]
+    private ?string $propertyAdditionalInfo = null;
+
     public function __construct()
     {
         $this->insurancePolicyClauses = new ArrayCollection();
@@ -581,6 +584,17 @@ class InsurancePolicy
     {
         $this->promotionalCodeDiscount = $promotionalCodeDiscount;
 
+        return $this;
+    }
+
+    public function getPropertyAdditionalInfo(): ?string
+    {
+        return $this->propertyAdditionalInfo;
+    }
+
+    public function setPropertyAdditionalInfo(?string $propertyAdditionalInfo): static
+    {
+        $this->propertyAdditionalInfo = $propertyAdditionalInfo;
         return $this;
     }
 }
