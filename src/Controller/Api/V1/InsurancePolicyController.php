@@ -198,6 +198,47 @@ class InsurancePolicyController extends AbstractController
             $errors[] = 'Полът трябва да бъде "male" или "female".';
         }
 
+        // Validate property_owner_nationality_id if property_owner_id_number_type_id is not 1
+        if (isset($data['property_owner_id_number_type_id']) && (int) $data['property_owner_id_number_type_id'] != 1) {
+            if (!isset($data['property_owner_nationality_id'])) {
+                $errors[] = 'Полето "property_owner_nationality_id" е задължително, когато типът на идентификационния номер на собственика не е 1.';
+            } else {
+                $propertyOwnerNationality = $this->nationalityRepository->find($data['property_owner_nationality_id']);
+                if (!$propertyOwnerNationality) {
+                    $errors[] = sprintf('Националност с ID %d не е намерена.', $data['property_owner_nationality_id']);
+                }
+            }
+        } elseif (isset($data['property_owner_nationality_id']) && (int) $data['property_owner_nationality_id'] != 0) {
+            // Only validate property_owner_nationality_id if it's provided and not 0 when property_owner_id_number_type_id = 1
+            $propertyOwnerNationality = $this->nationalityRepository->find($data['property_owner_nationality_id']);
+            if (!$propertyOwnerNationality) {
+                $errors[] = sprintf('Националност с ID %d не е намерена.', $data['property_owner_nationality_id']);
+            }
+        }
+
+        // Validate property_owner_gender if provided and property_owner_id_number_type_id != 1
+        if (isset($data['property_owner_gender']) && isset($data['property_owner_id_number_type_id']) && (int)$data['property_owner_id_number_type_id'] != 1 && !in_array($data['property_owner_gender'], ['male', 'female'])) {
+            $errors[] = 'Полът на собственика трябва да бъде "male" или "female".';
+        }
+
+        // Validate property_owner_birth_date if property_owner_id_number_type_id is not 1
+        if (isset($data['property_owner_id_number_type_id']) && (int) $data['property_owner_id_number_type_id'] != 1) {
+            if (!isset($data['property_owner_birth_date'])) {
+                $errors[] = 'Полето "property_owner_birth_date" е задължително, когато типът на идентификационния номер на собственика не е 1.';
+            } else {
+                try {
+                    $propertyOwnerBirthDate = new \DateTime($data['property_owner_birth_date']);
+                    $today = new \DateTime();
+                    $age = $today->diff($propertyOwnerBirthDate)->y;
+                    if ($age < 18) {
+                        $errors[] = 'Собственикът трябва да е на възраст над 18 години.';
+                    }
+                } catch (\Exception $e) {
+                    $errors[] = 'Невалидна дата на раждане на собственика.';
+                }
+            }
+        }
+
         // Validate area_sq_meters range
         $areaSqMeters = $data['area_sq_meters'];
         if (!is_numeric($areaSqMeters) || $areaSqMeters < 0 || $areaSqMeters > 100000) {
@@ -282,6 +323,30 @@ class InsurancePolicyController extends AbstractController
             if ($propertyOwnerIdNumberType) {
                 $insurancePolicy->setPropertyOwnerIdNumberType($propertyOwnerIdNumberType);
             }
+        }
+
+        // Set property_owner_birth_date to null if property_owner_id_number_type_id = 1, otherwise use the provided value
+        if (isset($data['property_owner_id_number_type_id']) && $data['property_owner_id_number_type_id'] == 1) {
+            $insurancePolicy->setPropertyOwnerBirthDate(null);
+        } else if (isset($data['property_owner_birth_date'])) {
+            $insurancePolicy->setPropertyOwnerBirthDate(new \DateTime($data['property_owner_birth_date']));
+        }
+
+        // Set property_owner_nationality to null if property_owner_id_number_type_id = 1, otherwise use the provided value
+        if (isset($data['property_owner_id_number_type_id']) && $data['property_owner_id_number_type_id'] == 1) {
+            $insurancePolicy->setPropertyOwnerNationality(null);
+        } else if (isset($data['property_owner_nationality_id'])) {
+            $propertyOwnerNationality = $this->nationalityRepository->find($data['property_owner_nationality_id']);
+            if ($propertyOwnerNationality) {
+                $insurancePolicy->setPropertyOwnerNationality($propertyOwnerNationality);
+            }
+        }
+
+        // Set property_owner_gender to null if property_owner_id_number_type_id = 1, otherwise use the provided value
+        if (isset($data['property_owner_id_number_type_id']) && $data['property_owner_id_number_type_id'] == 1) {
+            $insurancePolicy->setPropertyOwnerGender(null);
+        } else if (isset($data['property_owner_gender'])) {
+            $insurancePolicy->setPropertyOwnerGender($data['property_owner_gender']);
         }
 
         // Set financial fields based on the data from the request
@@ -507,6 +572,21 @@ class InsurancePolicyController extends AbstractController
 
         if ($insurancePolicy->getPropertyOwnerIdNumberType() !== null) {
             $response['property_owner_id_number_type_id'] = $insurancePolicy->getPropertyOwnerIdNumberType()->getId();
+        }
+
+        // Add property owner birth date to the response if it's set
+        if ($insurancePolicy->getPropertyOwnerBirthDate() !== null) {
+            $response['property_owner_birth_date'] = $insurancePolicy->getPropertyOwnerBirthDate()->format('Y-m-d');
+        }
+
+        // Add property owner nationality to the response if it's set
+        if ($insurancePolicy->getPropertyOwnerNationality() !== null) {
+            $response['property_owner_nationality_id'] = $insurancePolicy->getPropertyOwnerNationality()->getId();
+        }
+
+        // Add property owner gender to the response if it's set
+        if ($insurancePolicy->getPropertyOwnerGender() !== null) {
+            $response['property_owner_gender'] = $insurancePolicy->getPropertyOwnerGender();
         }
 
         // Add property additional info if it's set

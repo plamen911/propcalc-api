@@ -183,13 +183,14 @@ class InsurancePolicyRepository extends ServiceEntityRepository
             ->leftJoin('p.insurerNationality', 'insNat')
             ->leftJoin('p.insurerSettlement', 'insSet')
             ->leftJoin('p.propertyOwnerIdNumberType', 'point')
+            ->leftJoin('p.propertyOwnerNationality', 'poNat')
             ->leftJoin('p.tariffPreset', 'tp')
             ->leftJoin('p.promotionalCode', 'pc')
             ->leftJoin('p.insurancePolicyClauses', 'ipc')
             ->leftJoin('ipc.insuranceClause', 'ic')
             ->leftJoin('p.insurancePolicyPropertyChecklists', 'ippc')
             ->leftJoin('ippc.propertyChecklist', 'pcl')
-            ->addSelect('s', 'et', 'est', 'dw', 'pr', 'int', 'insNat', 'insSet', 'point', 'tp', 'pc', 'ipc', 'ic', 'ippc', 'pcl')
+            ->addSelect('s', 'et', 'est', 'dw', 'pr', 'int', 'insNat', 'insSet', 'point', 'poNat', 'tp', 'pc', 'ipc', 'ic', 'ippc', 'pcl')
             ->where('p.id = :id')
             ->setParameter('id', $id);
 
@@ -213,6 +214,8 @@ class InsurancePolicyRepository extends ServiceEntityRepository
             'propertyAddress' => $policy->getPropertyAddress(),
             'propertyOwnerName' => $policy->getPropertyOwnerName(),
             'propertyOwnerIdNumber' => $policy->getPropertyOwnerIdNumber(),
+            'propertyOwnerBirthDate' => $policy->getPropertyOwnerBirthDate() ? $policy->getPropertyOwnerBirthDate()->format('Y-m-d') : null,
+            'propertyOwnerGender' => $policy->getPropertyOwnerGender(),
             'areaSqMeters' => $policy->getAreaSqMeters(),
             'subtotal' => $policy->getSubtotal(),
             'discount' => $policy->getDiscount(),
@@ -255,6 +258,10 @@ class InsurancePolicyRepository extends ServiceEntityRepository
             'propertyOwnerIdNumberType' => $policy->getPropertyOwnerIdNumberType() ? [
                 'id' => $policy->getPropertyOwnerIdNumberType()->getId(),
                 'name' => $policy->getPropertyOwnerIdNumberType()->getName()
+            ] : null,
+            'propertyOwnerNationality' => $policy->getPropertyOwnerNationality() ? [
+                'id' => $policy->getPropertyOwnerNationality()->getId(),
+                'name' => $policy->getPropertyOwnerNationality()->getName()
             ] : null,
             'tariffPreset' => $policy->getTariffPreset() ? [
                 'id' => $policy->getTariffPreset()->getId(),

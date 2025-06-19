@@ -72,6 +72,16 @@ class InsurancePolicy
     #[ORM\Column(type: 'string', nullable: true)]
     private ?string $propertyOwnerIdNumber = null;
 
+    #[ORM\Column(type: 'date', nullable: true)]
+    private ?\DateTimeInterface $propertyOwnerBirthDate = null;
+
+    #[ORM\ManyToOne(targetEntity: Nationality::class)]
+    #[ORM\JoinColumn(name: 'property_owner_nationality_id', referencedColumnName: 'id')]
+    private ?Nationality $propertyOwnerNationality = null;
+
+    #[ORM\Column(type: 'string', nullable: true)]
+    private ?string $propertyOwnerGender = null;
+
     #[ORM\ManyToOne(targetEntity: EstateType::class)]
     #[ORM\JoinColumn(name: 'estate_type_id', referencedColumnName: 'id')]
     private ?EstateType $estateType = null;
@@ -595,6 +605,39 @@ class InsurancePolicy
     public function setPropertyAdditionalInfo(?string $propertyAdditionalInfo): static
     {
         $this->propertyAdditionalInfo = $propertyAdditionalInfo;
+        return $this;
+    }
+
+    public function getPropertyOwnerBirthDate(): ?\DateTimeInterface
+    {
+        return $this->propertyOwnerBirthDate;
+    }
+
+    public function setPropertyOwnerBirthDate(?\DateTimeInterface $propertyOwnerBirthDate): static
+    {
+        $this->propertyOwnerBirthDate = $propertyOwnerBirthDate;
+        return $this;
+    }
+
+    public function getPropertyOwnerNationality(): ?Nationality
+    {
+        return $this->propertyOwnerNationality;
+    }
+
+    public function setPropertyOwnerNationality(?Nationality $propertyOwnerNationality): static
+    {
+        $this->propertyOwnerNationality = $propertyOwnerNationality;
+        return $this;
+    }
+
+    public function getPropertyOwnerGender(): ?string
+    {
+        return $this->propertyOwnerGender;
+    }
+
+    public function setPropertyOwnerGender(?string $propertyOwnerGender): static
+    {
+        $this->propertyOwnerGender = $propertyOwnerGender;
         return $this;
     }
 }

@@ -248,7 +248,36 @@ class EmailService
                     <div class="item">
                         <span class="label">' . ($propertyOwnerIdNumberType ? $propertyOwnerIdNumberType->getName() : 'ЕГН/ЛНЧ/Паспорт №') . ':</span>
                         <span class="value">' . ($policy->getPropertyOwnerIdNumber() ? $policy->getPropertyOwnerIdNumber() : 'Не е посочено') . '</span>
-                    </div>
+                    </div>';
+
+        // Add property owner birth date if available
+        if ($policy->getPropertyOwnerBirthDate()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Дата на раждане на собственика:</span>
+                        <span class="value">' . $policy->getPropertyOwnerBirthDate()->format('d.m.Y') . '</span>
+                    </div>';
+        }
+
+        // Add property owner nationality if available
+        if ($policy->getPropertyOwnerNationality()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Националност на собственика:</span>
+                        <span class="value">' . $policy->getPropertyOwnerNationality()->getName() . '</span>
+                    </div>';
+        }
+
+        // Add property owner gender if available
+        if ($policy->getPropertyOwnerGender()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Пол на собственика:</span>
+                        <span class="value">' . ($policy->getPropertyOwnerGender() === 'male' ? 'Мъж' : 'Жена') . '</span>
+                    </div>';
+        }
+
+        $content .= '
                     <div class="item">
                         <span class="label">Допълнителни данни за имота:</span>
                         <span class="value">' . ($policy->getPropertyAdditionalInfo() ? $policy->getPropertyAdditionalInfo() : 'Не е посочено') . '</span>
