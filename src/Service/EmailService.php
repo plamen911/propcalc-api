@@ -204,7 +204,7 @@ class EmailService
 
         $content .= '
                     <div class="item">
-                        <span class="label">2% данък върху застрахователната премия:</span>
+                        <span class="label">Данък върху застрахователната премия 2% :</span>
                         <span class="value">' . number_format($policy->getSubtotalTax(), 2, '.', ' ') . ' лв.</span>
                     </div>
                     <div class="item">
