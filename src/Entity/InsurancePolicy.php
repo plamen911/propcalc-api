@@ -79,8 +79,14 @@ class InsurancePolicy
     #[ORM\JoinColumn(name: 'property_owner_nationality_id', referencedColumnName: 'id')]
     private ?Nationality $propertyOwnerNationality = null;
 
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(length: 10, nullable: true)]
     private ?string $propertyOwnerGender = null;
+
+    #[ORM\ManyToOne(targetEntity: Settlement::class)]
+    private ?Settlement $propertyOwnerSettlement = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $propertyOwnerPermanentAddress = null;
 
     #[ORM\ManyToOne(targetEntity: EstateType::class)]
     #[ORM\JoinColumn(name: 'estate_type_id', referencedColumnName: 'id')]
@@ -635,9 +641,34 @@ class InsurancePolicy
         return $this->propertyOwnerGender;
     }
 
-    public function setPropertyOwnerGender(?string $propertyOwnerGender): static
+    public function setPropertyOwnerGender(?string $propertyOwnerGender): self
     {
         $this->propertyOwnerGender = $propertyOwnerGender;
+
+        return $this;
+    }
+
+    public function getPropertyOwnerSettlement(): ?Settlement
+    {
+        return $this->propertyOwnerSettlement;
+    }
+
+    public function setPropertyOwnerSettlement(?Settlement $propertyOwnerSettlement): self
+    {
+        $this->propertyOwnerSettlement = $propertyOwnerSettlement;
+
+        return $this;
+    }
+
+    public function getPropertyOwnerPermanentAddress(): ?string
+    {
+        return $this->propertyOwnerPermanentAddress;
+    }
+
+    public function setPropertyOwnerPermanentAddress(?string $propertyOwnerPermanentAddress): self
+    {
+        $this->propertyOwnerPermanentAddress = $propertyOwnerPermanentAddress;
+
         return $this;
     }
 }

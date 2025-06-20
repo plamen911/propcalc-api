@@ -277,6 +277,24 @@ class EmailService
                     </div>';
         }
 
+        // Add property owner settlement if available
+        if ($policy->getPropertyOwnerSettlement()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Населено място на собственика:</span>
+                        <span class="value">' . $policy->getPropertyOwnerSettlement()->getFullName() . '</span>
+                    </div>';
+        }
+
+        // Add property owner permanent address if available
+        if ($policy->getPropertyOwnerPermanentAddress()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Постоянен адрес на собственика:</span>
+                        <span class="value">' . $policy->getPropertyOwnerPermanentAddress() . '</span>
+                    </div>';
+        }
+
         $content .= '
                     <div class="item">
                         <span class="label">Допълнителни пояснения:</span>

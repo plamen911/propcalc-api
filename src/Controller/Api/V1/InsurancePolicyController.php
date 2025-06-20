@@ -245,6 +245,22 @@ class InsurancePolicyController extends AbstractController
             $errors[] = 'Площта в квадратни метри трябва да бъде число между 0 и 100000.';
         }
 
+        // Validate property_owner_id_number_type_id
+        if (isset($data['property_owner_id_number_type_id'])) {
+            $propertyOwnerIdNumberType = $this->idNumberTypeRepository->find($data['property_owner_id_number_type_id']);
+            if (!$propertyOwnerIdNumberType) {
+                $errors[] = sprintf('Тип на идентификационен номер на собственика с ID %d не е намерен.', $data['property_owner_id_number_type_id']);
+            }
+        }
+
+        // Validate property_owner_settlement_id
+        if (isset($data['property_owner_settlement_id'])) {
+            $propertyOwnerSettlement = $this->settlementRepository->find($data['property_owner_settlement_id']);
+            if (!$propertyOwnerSettlement) {
+                $errors[] = sprintf('Населено място на собственика с ID %d не е намерено.', $data['property_owner_settlement_id']);
+            }
+        }
+
         if (!empty($errors)) {
             return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
@@ -318,11 +334,8 @@ class InsurancePolicyController extends AbstractController
             $insurancePolicy->setPropertyOwnerIdNumber($data['property_owner_id_number']);
         }
 
-        if (isset($data['property_owner_id_number_type_id'])) {
-            $propertyOwnerIdNumberType = $this->idNumberTypeRepository->find($data['property_owner_id_number_type_id']);
-            if ($propertyOwnerIdNumberType) {
-                $insurancePolicy->setPropertyOwnerIdNumberType($propertyOwnerIdNumberType);
-            }
+        if (isset($propertyOwnerIdNumberType)) {
+            $insurancePolicy->setPropertyOwnerIdNumberType($propertyOwnerIdNumberType);
         }
 
         // Set property_owner_birth_date to null if property_owner_id_number_type_id = 1, otherwise use the provided value
@@ -349,11 +362,21 @@ class InsurancePolicyController extends AbstractController
             $insurancePolicy->setPropertyOwnerGender($data['property_owner_gender']);
         }
 
+        // Set property_owner_settlement if provided
+        if (isset($propertyOwnerSettlement)) {
+            $insurancePolicy->setPropertyOwnerSettlement($propertyOwnerSettlement);
+        }
+
+        // Set property_owner_permanent_address if provided
+        if (isset($data['property_owner_permanent_address'])) {
+            $insurancePolicy->setPropertyOwnerPermanentAddress($data['property_owner_permanent_address']);
+        }
+
         // Set financial fields based on the data from the request
         $insurancePolicy->setSubtotal(isset($data['subtotal']) ? (float)$data['subtotal'] : 0);
         $insurancePolicy->setDiscount(isset($data['discount']) ? (float)$data['discount'] : 0);
         $insurancePolicy->setSubtotalTax(isset($data['subtotal_tax']) ? (float)$data['subtotal_tax'] : 0);
-        $insurancePolicy->setTotal(isset($data['total']) ? (float)$data['total'] : 0);
+        $insurancePolicy->setTotal((float)($data['total'] ?? 0));
 
         // Set property additional info if it's provided
         if (isset($data['property_additional_info'])) {
@@ -592,6 +615,16 @@ class InsurancePolicyController extends AbstractController
         // Add property owner gender to the response if it's set
         if ($insurancePolicy->getPropertyOwnerGender() !== null) {
             $response['property_owner_gender'] = $insurancePolicy->getPropertyOwnerGender();
+        }
+
+        // Add property owner settlement to the response if it's set
+        if ($insurancePolicy->getPropertyOwnerSettlement() !== null) {
+            $response['property_owner_settlement_id'] = $insurancePolicy->getPropertyOwnerSettlement()->getId();
+        }
+
+        // Add property owner permanent address to the response if it's set
+        if ($insurancePolicy->getPropertyOwnerPermanentAddress() !== null) {
+            $response['property_owner_permanent_address'] = $insurancePolicy->getPropertyOwnerPermanentAddress();
         }
 
         // Load the insurance policy with its clauses before sending emails
