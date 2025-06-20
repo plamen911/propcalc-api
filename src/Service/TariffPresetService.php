@@ -138,6 +138,7 @@ class TariffPresetService
                     'insurance_clause' => [
                         'id' => $insuranceClauseId,
                         'name' => $insuranceClause->getName(),
+                        'description' => $insuranceClause->getDescription(),
                         'tariff_number' => $tariffNumber,
                         'allow_custom_amount' => $insuranceClause->getAllowCustomAmount(),
                         'position' => $clause->getPosition(),

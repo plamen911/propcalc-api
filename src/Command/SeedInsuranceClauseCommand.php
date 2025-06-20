@@ -24,7 +24,8 @@ class SeedInsuranceClauseCommand extends Command
             "id" => 1,
             "name" => "Пожар и щети - Недвижимо имущество",
             "tariff_number" => 0.11,
-            "position" => 1
+            "position" => 1,
+            "description" => "Тази клауза покрива щети, причинени от пожар, мълния, експлозия, имплозия, сблъсък или падане на пилотирано летателно тяло, негови части или товар. Включва и разходи за спасяване на застрахованото имущество, ограничаване на вредите и разчистване на останки."
         ],
         [
             "id" => 2,
@@ -140,7 +141,7 @@ class SeedInsuranceClauseCommand extends Command
             // Process each insurance clause
             foreach (self::INSURANCE_CLAUSES_DATA as $insuranceClauseData) {
                 // Insert directly using SQL to ensure the ID is set correctly
-                $sql = 'INSERT INTO insurance_clauses (id, name, tariff_number, has_tariff_number, tariff_amount, allow_custom_amount, position) VALUES (:id, :name, :tariff_number, :has_tariff_number, :tariff_amount, :allow_custom_amount, :position)';
+                $sql = 'INSERT INTO insurance_clauses (id, name, tariff_number, has_tariff_number, tariff_amount, allow_custom_amount, position, description, active) VALUES (:id, :name, :tariff_number, :has_tariff_number, :tariff_amount, :allow_custom_amount, :position, :description, :active)';
                 $params = [
                     'id' => $insuranceClauseData['id'],
                     'name' => $insuranceClauseData['name'],
@@ -149,6 +150,8 @@ class SeedInsuranceClauseCommand extends Command
                     'tariff_amount' => $insuranceClauseData['id'] == 14 || $insuranceClauseData['id'] == 15 ? 2.0 : 0.0,
                     'allow_custom_amount' => in_array($insuranceClauseData['id'], [4, 5, 6, 14, 15]) ? 0 : 1,
                     'position' => $insuranceClauseData['position'],
+                    'description' => $insuranceClauseData['description'] ?? null,
+                    'active' => true,
                 ];
 
                 $connection->executeStatement($sql, $params);

@@ -13,11 +13,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'insurance_clauses')]
 class InsuranceClause
 {
-    public function __construct()
-    {
-        $this->insurancePolicyClauses = new ArrayCollection();
-        $this->tariffPresetClauses = new ArrayCollection();
-    }
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -38,6 +33,9 @@ class InsuranceClause
     #[ORM\Column(name: 'allow_custom_amount', type: 'boolean')]
     private bool $allowCustomAmount = false;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $description = null;
+
     #[ORM\Column(type: 'boolean')]
     private bool $active = true;
 
@@ -49,6 +47,12 @@ class InsuranceClause
 
     #[ORM\OneToMany(mappedBy: 'insuranceClause', targetEntity: TariffPresetClause::class)]
     private Collection $tariffPresetClauses;
+
+    public function __construct()
+    {
+        $this->insurancePolicyClauses = new ArrayCollection();
+        $this->tariffPresetClauses = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -111,6 +115,18 @@ class InsuranceClause
     public function setAllowCustomAmount(bool $allowCustomAmount): static
     {
         $this->allowCustomAmount = $allowCustomAmount;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): static
+    {
+        $this->description = $description;
 
         return $this;
     }
