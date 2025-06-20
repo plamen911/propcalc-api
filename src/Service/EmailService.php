@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Repository\AppConfigRepository;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
@@ -17,17 +18,20 @@ class EmailService
     private MailerInterface $mailer;
     private ParameterBagInterface $params;
     private LoggerInterface $logger;
+    private AppConfigRepository $appConfigRepository;
     private string $adminEmail = 'general@zastrahovaite.com';
     //private string $adminEmail = 'plamen326@gmail.com';
 
     public function __construct(
         MailerInterface $mailer,
         ParameterBagInterface $params,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        AppConfigRepository $appConfigRepository
     ) {
         $this->mailer = $mailer;
         $this->params = $params;
         $this->logger = $logger;
+        $this->appConfigRepository = $appConfigRepository;
     }
 
     /**
@@ -107,6 +111,14 @@ class EmailService
         // Get property checklist items
         $propertyChecklistItems = $policy->getInsurancePolicyPropertyChecklists();
 
+        // Get currency symbol
+        $currencyConfig = $this->appConfigRepository->findOneBy(['name' => 'CURRENCY']);
+        $currencySymbol = $currencyConfig ? $currencyConfig->getValue() : '';
+
+        // Get tax percents
+        $taxPercentsConfig = $this->appConfigRepository->findOneBy(['name' => 'TAX_PERCENTS']);
+        $taxPercents = $taxPercentsConfig ? $taxPercentsConfig->getValue() : '';
+
         // Build the email content
         $content = '
         <!DOCTYPE html>
@@ -151,24 +163,22 @@ class EmailService
                     </div>';
         }
 
+        $content .= '
+            <div class="item" style="margin-top: 15px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Клаузи</th>
+                            <th>Застрахователна сума</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+
         // Display clauses if available
         if (count($policyClauses) > 0) {
-            $content .= '
-                    <div class="item" style="margin-top: 15px;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Клаузи</th>
-                                    <th>Застрахователна сума</th>
-                                </tr>
-                            </thead>
-                            <tbody>';
-
             // Sort clauses by position
             $clausesArray = $policyClauses->toArray();
-            usort($clausesArray, function($a, $b) {
-                return $a->getPosition() <=> $b->getPosition();
-            });
+            usort($clausesArray, fn ($a, $b) => $a->getPosition() <=> $b->getPosition());
 
             foreach ($clausesArray as $clause) {
                 // Only display clauses with non-zero amounts
@@ -176,41 +186,44 @@ class EmailService
                     $content .= '
                                 <tr>
                                     <td>' . $clause->getName() . '</td>
-                                    <td style="text-align: right; font-weight: bold;">' . number_format($clause->getTariffAmount(), 2, '.', ' ') . ' лв.</td>
+                                    <td style="text-align: right; font-weight: bold;">' . number_format($clause->getTariffAmount(), 2, '.', ' ') . ' '.$currencySymbol.'</td>
                                 </tr>';
                 }
             }
-
-            $content .= '
-                            </tbody>
-                        </table>
-                    </div>';
         }
 
         // Financial information
         $content .= '
-                    <div class="item">
-                        <span class="label">Застрахователна премия:</span>
-                        <span class="value">' . number_format($policy->getSubtotal(), 2, '.', ' ') . ' лв.</span>
-                    </div>';
-
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>Застрахователна премия:</th>
+                            <th style="text-align: right;">' . number_format($policy->getSubtotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
+                        </tr>';
         if ($policy->getDiscount() > 0) {
-            $content .= '
-                    <div class="item">
-                        <span class="label">Застрахователна премия след отстъпка от ' . $policy->getDiscount() . '%:</span>
-                        <span class="value">' . number_format($policy->getSubtotal() * (1 - $policy->getDiscount() / 100), 2, '.', ' ') . ' лв.</span>
-                    </div>';
+            $content .= '<tr>
+                            <th>Застр. премия след отстъпка от ' . $policy->getDiscount() . '%:</th>
+                            <th style="text-align: right;">' . number_format($policy->getSubtotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
+                        </tr>';
         }
+        $content .= '
+                        <tr>
+                            <th>Данък върху застрахователната премия '.$taxPercents.'%:</th>
+                            <th style="text-align: right;">' . number_format($policy->getSubtotalTax(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
+                        </tr>
+                        <tr>
+                            <th>Общо дължима сума за една година:</th>
+                            <th style="text-align: right;">' . number_format($policy->getTotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
+                        </tr>
+                    </tfoot>';
 
         $content .= '
-                    <div class="item">
-                        <span class="label">Данък върху застрахователната премия 2% :</span>
-                        <span class="value">' . number_format($policy->getSubtotalTax(), 2, '.', ' ') . ' лв.</span>
-                    </div>
-                    <div class="item">
-                        <span class="label">Общо дължима сума за една година:</span>
-                        <span class="value">' . number_format($policy->getTotal(), 2, '.', ' ') . ' лв.</span>
-                    </div>
+                </table>
+            </div>';
+
+
+
+        $content .= '
                     </div>';
 
         // Property information section
@@ -241,59 +254,7 @@ class EmailService
                         <span class="label">РЗП:</span>
                         <span class="value">' . $policy->getAreaSqMeters() . ' кв.м.</span>
                     </div>
-                    <div class="item">
-                        <span class="label">Имена на собственика:</span>
-                        <span class="value">' . ($policy->getPropertyOwnerName() ? $policy->getPropertyOwnerName() : 'Не е посочено') . '</span>
-                    </div>
-                    <div class="item">
-                        <span class="label">' . ($propertyOwnerIdNumberType ? $propertyOwnerIdNumberType->getName() : 'ЕГН/ЛНЧ/Паспорт №') . ':</span>
-                        <span class="value">' . ($policy->getPropertyOwnerIdNumber() ? $policy->getPropertyOwnerIdNumber() : 'Не е посочено') . '</span>
-                    </div>';
-
-        // Add property owner birth date if available
-        if ($policy->getPropertyOwnerBirthDate()) {
-            $content .= '
-                    <div class="item">
-                        <span class="label">Дата на раждане на собственика:</span>
-                        <span class="value">' . $policy->getPropertyOwnerBirthDate()->format('d.m.Y') . '</span>
-                    </div>';
-        }
-
-        // Add property owner nationality if available
-        if ($policy->getPropertyOwnerNationality()) {
-            $content .= '
-                    <div class="item">
-                        <span class="label">Националност на собственика:</span>
-                        <span class="value">' . $policy->getPropertyOwnerNationality()->getName() . '</span>
-                    </div>';
-        }
-
-        // Add property owner gender if available
-        if ($policy->getPropertyOwnerGender()) {
-            $content .= '
-                    <div class="item">
-                        <span class="label">Пол на собственика:</span>
-                        <span class="value">' . ($policy->getPropertyOwnerGender() === 'male' ? 'Мъж' : 'Жена') . '</span>
-                    </div>';
-        }
-
-        // Add property owner settlement if available
-        if ($policy->getPropertyOwnerSettlement()) {
-            $content .= '
-                    <div class="item">
-                        <span class="label">Населено място на собственика:</span>
-                        <span class="value">' . $policy->getPropertyOwnerSettlement()->getFullName() . '</span>
-                    </div>';
-        }
-
-        // Add property owner permanent address if available
-        if ($policy->getPropertyOwnerPermanentAddress()) {
-            $content .= '
-                    <div class="item">
-                        <span class="label">Постоянен адрес на собственика:</span>
-                        <span class="value">' . $policy->getPropertyOwnerPermanentAddress() . '</span>
-                    </div>';
-        }
+                    ';
 
         $content .= '
                     <div class="item">
@@ -333,6 +294,66 @@ class EmailService
 
         // Property checklist items section is now included directly in the property information section
 
+        // Owner information section
+        $content .= '
+                <div class="section">
+                    <div class="section-title">Данни за собственика</div>
+                    <div class="item">
+                        <span class="label">Име:</span>
+                        <span class="value">' . ($policy->getPropertyOwnerName() ? $policy->getPropertyOwnerName() : 'Не е посочено') . '</span>
+                    </div>
+                    <div class="item">
+                        <span class="label">' . ($propertyOwnerIdNumberType ? $propertyOwnerIdNumberType->getName() : 'ЕГН/ЛНЧ/Паспорт №') . ':</span>
+                        <span class="value">' . ($policy->getPropertyOwnerIdNumber() ? $policy->getPropertyOwnerIdNumber() : 'Не е посочено') . '</span>
+                    </div>';
+
+        // Add the property owner birthdate if available
+        if ($policy->getPropertyOwnerBirthDate()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Дата на раждане:</span>
+                        <span class="value">' . $policy->getPropertyOwnerBirthDate()->format('d.m.Y') . ' г.</span>
+                    </div>';
+        }
+
+        // Add property owner nationality if available
+        if ($policy->getPropertyOwnerNationality()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Националност:</span>
+                        <span class="value">' . $policy->getPropertyOwnerNationality()->getName() . '</span>
+                    </div>';
+        }
+
+        // Add property owner gender if available
+        if ($policy->getPropertyOwnerGender()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Пол:</span>
+                        <span class="value">' . ($policy->getPropertyOwnerGender() === 'male' ? 'Мъж' : 'Жена') . '</span>
+                    </div>';
+        }
+
+        // Add a property owner settlement if available
+        if ($policy->getPropertyOwnerSettlement()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Населено място:</span>
+                        <span class="value">' . $policy->getPropertyOwnerSettlement()->getFullName() . '</span>
+                    </div>';
+        }
+
+        // Add property owner permanent address if available
+        if ($policy->getPropertyOwnerPermanentAddress()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Постоянен адрес:</span>
+                        <span class="value">' . $policy->getPropertyOwnerPermanentAddress() . '</span>
+                    </div>';
+        }
+
+        $content .= '</div>';
+
         // Insurer information section
         $content .= '
                 <div class="section">
@@ -344,7 +365,32 @@ class EmailService
                     <div class="item">
                         <span class="label">' . ($idNumberType ? $idNumberType->getName() : 'ЕГН/ЛНЧ/Паспорт №') . ':</span>
                         <span class="value">' . $policy->getIdNumber() . '</span>
-                    </div>
+                    </div>';
+        if ($policy->getBirthDate()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Дата на раждане:</span>
+                        <span class="value">' . $policy->getBirthDate()->format('d.m.Y') . ' г.</span>
+                    </div>';
+        }
+
+        if ($policy->getInsurerNationality()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Националност:</span>
+                        <span class="value">' . $policy->getInsurerNationality()->getName() . '</span>
+                    </div>';
+        }
+
+        if ($policy->getGender()) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Пол:</span>
+                        <span class="value">' . ($policy->getGender() === 'male' ? 'Мъж' : 'Жена') . '</span>
+                    </div>';
+        }
+
+        $content .= '
                     <div class="item">
                         <span class="label">Населено място:</span>
                         <span class="value">' . ($insurerSettlement ? $insurerSettlement->getFullName() : 'Не е посочено') . '</span>

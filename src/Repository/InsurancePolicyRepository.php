@@ -253,7 +253,7 @@ class InsurancePolicyRepository extends ServiceEntityRepository
             ] : null,
             'insurerSettlement' => $policy->getInsurerSettlement() ? [
                 'id' => $policy->getInsurerSettlement()->getId(),
-                'name' => $policy->getInsurerSettlement()->getName()
+                'name' => $policy->getInsurerSettlement()->getFullName()
             ] : null,
             'propertyOwnerIdNumberType' => $policy->getPropertyOwnerIdNumberType() ? [
                 'id' => $policy->getPropertyOwnerIdNumberType()->getId(),
@@ -279,7 +279,7 @@ class InsurancePolicyRepository extends ServiceEntityRepository
             'propertyAdditionalInfo' => $policy->getPropertyAdditionalInfo(),
             'propertyOwnerSettlement' => $policy->getPropertyOwnerSettlement() ? [
                 'id' => $policy->getPropertyOwnerSettlement()->getId(),
-                'name' => $policy->getPropertyOwnerSettlement()->getName()
+                'name' => $policy->getPropertyOwnerSettlement()->getFullName()
             ] : null,
             'propertyOwnerPermanentAddress' => $policy->getPropertyOwnerPermanentAddress(),
         ];
