@@ -206,7 +206,7 @@ class InsurancePolicyRepository extends ServiceEntityRepository
             'code' => $policy->getCode(),
             'fullName' => $policy->getFullName(),
             'idNumber' => $policy->getIdNumber(),
-            'birthDate' => $policy->getBirthDate() ? $policy->getBirthDate()->format('Y-m-d') : null,
+            'birthDate' => $policy->getBirthDate() ? $policy->getBirthDate()->format('d.m.Y') : null,
             'gender' => $policy->getGender(),
             'permanentAddress' => $policy->getPermanentAddress(),
             'phone' => $policy->getPhone(),
@@ -214,7 +214,7 @@ class InsurancePolicyRepository extends ServiceEntityRepository
             'propertyAddress' => $policy->getPropertyAddress(),
             'propertyOwnerName' => $policy->getPropertyOwnerName(),
             'propertyOwnerIdNumber' => $policy->getPropertyOwnerIdNumber(),
-            'propertyOwnerBirthDate' => $policy->getPropertyOwnerBirthDate() ? $policy->getPropertyOwnerBirthDate()->format('Y-m-d') : null,
+            'propertyOwnerBirthDate' => $policy->getPropertyOwnerBirthDate() ? $policy->getPropertyOwnerBirthDate()->format('d.m.Y') : null,
             'propertyOwnerGender' => $policy->getPropertyOwnerGender(),
             'areaSqMeters' => $policy->getAreaSqMeters(),
             'subtotal' => $policy->getSubtotal(),
@@ -277,6 +277,11 @@ class InsurancePolicyRepository extends ServiceEntityRepository
             'insurancePolicyClauses' => [],
             'propertyChecklistItems' => [],
             'propertyAdditionalInfo' => $policy->getPropertyAdditionalInfo(),
+            'propertyOwnerSettlement' => $policy->getPropertyOwnerSettlement() ? [
+                'id' => $policy->getPropertyOwnerSettlement()->getId(),
+                'name' => $policy->getPropertyOwnerSettlement()->getName()
+            ] : null,
+            'propertyOwnerPermanentAddress' => $policy->getPropertyOwnerPermanentAddress(),
         ];
 
         // Add insurance policy clauses
