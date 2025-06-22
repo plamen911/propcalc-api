@@ -83,6 +83,7 @@ class InsurancePolicy
     private ?string $propertyOwnerGender = null;
 
     #[ORM\ManyToOne(targetEntity: Settlement::class)]
+    #[ORM\JoinColumn(name: 'property_owner_settlement_id', referencedColumnName: 'id')]
     private ?Settlement $propertyOwnerSettlement = null;
 
     #[ORM\Column(length: 255, nullable: true)]
