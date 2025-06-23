@@ -37,6 +37,7 @@ class InsuranceClauseController extends AbstractController
             $data[] = [
                 'id' => $clause->getId(),
                 'name' => $clause->getName(),
+                'description' => $clause->getDescription(),
                 'tariff_number' => $clause->getTariffNumber(),
                 'has_tariff_number' => $clause->getHasTariffNumber(),
                 'tariff_amount' => $clause->getTariffAmount(),
@@ -61,6 +62,10 @@ class InsuranceClauseController extends AbstractController
 
         if (isset($data['name'])) {
             $insuranceClause->setName($data['name']);
+        }
+
+        if (isset($data['description'])) {
+            $insuranceClause->setDescription($data['description']);
         }
 
         if (isset($data['tariff_number'])) {
@@ -104,6 +109,7 @@ class InsuranceClauseController extends AbstractController
         return $this->json([
             'id' => $insuranceClause->getId(),
             'name' => $insuranceClause->getName(),
+            'description' => $insuranceClause->getDescription(),
             'tariff_number' => $insuranceClause->getTariffNumber(),
             'has_tariff_number' => $insuranceClause->getHasTariffNumber(),
             'tariff_amount' => $insuranceClause->getTariffAmount(),
