@@ -7,6 +7,7 @@ use App\Repository\InsurancePolicyRepository;
 use App\Service\EmailService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 class EmailTestController extends AbstractController
@@ -20,6 +21,29 @@ class EmailTestController extends AbstractController
     ) {
         $this->emailService = $emailService;
         $this->policyRepository = $policyRepository;
+    }
+
+    /**
+     * @throws TransportExceptionInterface
+     */
+    #[Route('/email-test/{id}/submit', name: 'app_email_test_submit')]
+    public function testSubmitEmail(int $id): Response
+    {
+        // Find the insurance policy by ID
+        $policy = $this->policyRepository->find($id);
+
+        // If policy not found, return a 404 response
+        if (!$policy) {
+            return new Response('Insurance policy not found', Response::HTTP_NOT_FOUND);
+        }
+
+        $result = $this->emailService->sendOrderConfirmationEmails($policy);
+
+        if ($result) {
+            return new Response('Successfully sent emails', Response::HTTP_CREATED);
+        }
+
+        return new Response('Failed to send emails', Response::HTTP_INTERNAL_SERVER_ERROR);
     }
 
     #[Route('/email-test', name: 'app_email_test_list')]

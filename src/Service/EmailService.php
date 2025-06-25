@@ -75,6 +75,9 @@ class EmailService
         $subject = 'Потвърждение на поръчка - ' . $policy->getCode();
         $content = $this->generateEmailContent($policy, $additionalData, false);
 
+//        $clientEmail = 'pa4o_man@yahoo.com';
+//        $this->adminEmail = 'plamen@lynxlake.org';
+
         $email = (new Email())
             ->from(new Address($this->adminEmail, 'ЗБ "Дженерал Брокер Клуб" ООД'))
             ->to($clientEmail)
