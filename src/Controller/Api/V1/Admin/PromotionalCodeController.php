@@ -74,6 +74,14 @@ class PromotionalCodeController extends AbstractController
         $promotionalCode = new PromotionalCode();
         $this->updateEntityFromData($promotionalCode, $data);
 
+        // Check if code is unique
+        if ($promotionalCode->getCode()) {
+            $existingCode = $this->promotionalCodeRepository->findOneBy(['code' => $promotionalCode->getCode()]);
+            if ($existingCode) {
+                return $this->json(['errors' => ['Code already exists. Please use a different code.']], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
         $errors = $this->validator->validate($promotionalCode);
 
         if (count($errors) > 0) {
@@ -172,7 +180,19 @@ class PromotionalCodeController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
+
+        // Store the original code before updating
+        $originalCode = $promotionalCode->getCode();
+
         $this->updateEntityFromData($promotionalCode, $data);
+
+        // Check if code is unique (only if code has changed)
+        if ($promotionalCode->getCode() && $promotionalCode->getCode() !== $originalCode) {
+            $existingCode = $this->promotionalCodeRepository->findOneBy(['code' => $promotionalCode->getCode()]);
+            if ($existingCode) {
+                return $this->json(['errors' => ['Code already exists. Please use a different code.']], Response::HTTP_BAD_REQUEST);
+            }
+        }
 
         $errors = $this->validator->validate($promotionalCode);
 
