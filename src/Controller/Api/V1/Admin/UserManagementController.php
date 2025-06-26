@@ -3,6 +3,7 @@
 namespace App\Controller\Api\V1\Admin;
 
 use App\Entity\User;
+use App\Repository\PromotionalCodeRepository;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,6 +22,7 @@ class UserManagementController extends AbstractController
 {
     private UserRepository $userRepository;
     private UserPasswordHasherInterface $passwordHasher;
+    private PromotionalCodeRepository $promotionalCodeRepository;
 
     // Available roles for assignment
     private const AVAILABLE_ROLES = [
@@ -31,10 +33,12 @@ class UserManagementController extends AbstractController
 
     public function __construct(
         UserRepository $userRepository,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        PromotionalCodeRepository $promotionalCodeRepository
     ) {
         $this->userRepository = $userRepository;
         $this->passwordHasher = $passwordHasher;
+        $this->promotionalCodeRepository = $promotionalCodeRepository;
     }
 
     /**
@@ -206,6 +210,13 @@ class UserManagementController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
 
+        // Delete promotional codes associated with the user
+        $promotionalCodes = $this->promotionalCodeRepository->findBy(['user' => $user]);
+        foreach ($promotionalCodes as $promotionalCode) {
+            $this->promotionalCodeRepository->remove($promotionalCode, false);
+        }
+
+        // Delete the user
         $this->userRepository->remove($user, true);
 
         return $this->json(['message' => 'Потребителят е изтрит успешно']);
