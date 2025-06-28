@@ -19,6 +19,7 @@ class EmailService
     private ParameterBagInterface $params;
     private LoggerInterface $logger;
     private AppConfigRepository $appConfigRepository;
+    //private string $adminEmail = 'teodor.daike@gmail.com';
     private string $adminEmail = 'general@zastrahovaite.com';
     //private string $adminEmail = 'plamen326@gmail.com';
 
