@@ -22,6 +22,7 @@ class EmailService
     //private string $adminEmail = 'teodor.daike@gmail.com';
     private string $adminEmail = 'general@zastrahovaite.com';
     //private string $adminEmail = 'plamen326@gmail.com';
+    private string $senderName = 'ЗБ "Дженерал Брокер Клуб" ООД';
 
     public function __construct(
         MailerInterface $mailer,
@@ -90,13 +91,37 @@ class EmailService
     }
 
     /**
-     * Generate the HTML content for the email
+     * Send a PDF document via email
      *
-     * @param InsurancePolicy $policy The insurance policy data
-     * @param array $additionalData Additional data needed for the email
-     * @param bool $isAdminEmail Whether this is an admin email
-     * @return string The HTML content
+     * @param string $recipientEmail The recipient's email address
+     * @param string $pdfContent The PDF content as a binary string
+     * @param string $filename The filename for the PDF attachment
+     * @param string $subject The email subject
+     * @return bool Whether the email was sent successfully
      */
+    public function sendPdfViaEmail(string $recipientEmail, string $pdfContent, string $filename, string $subject = 'Информация за тарифа'): bool
+    {
+        try {
+            // Create email with PDF attachment
+            $email = (new Email())
+                ->from(new Address($this->adminEmail, $this->senderName))
+                ->to($recipientEmail)
+                ->bcc($this->adminEmail)
+                ->subject($subject)
+                ->html('<p>Здравейте,</p><p>Прикачен е PDF документ с информация за избраната тарифа.</p><p>Поздрави,<br>' . $this->senderName . '</p>')
+                ->attach($pdfContent, $filename, 'application/pdf');
+
+            // Send the email
+            $this->mailer->send($email);
+
+            return true;
+        } catch (\Exception $e) {
+            // Log the error but don't throw an exception
+            $this->logger->error('Failed to send PDF via email: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function generateEmailContent(InsurancePolicy $policy, array $additionalData = [], bool $isAdminEmail = false): string
     {
         // Get related entities
