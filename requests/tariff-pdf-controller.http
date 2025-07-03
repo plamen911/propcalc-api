@@ -1,0 +1,34 @@
+### Send POST request with json body
+POST https://127.0.0.1:8000/api/v1/tariff/pdf
+Content-Type: application/json
+
+{
+    "selectedTariff": {
+        "id": 999,
+        "name": "Test Tariff",
+        "price": 100,
+        "tax_percent": 2,
+        "discount_percent": 5,
+        "tariff_preset_clauses": [
+            {
+                "tariff_amount": 50000,
+                "insurance_clause": {
+                    "name": "Fire and Natural Disasters"
+                }
+            },
+            {
+                "tariff_amount": 25000,
+                "insurance_clause": {
+                    "name": "Theft and Vandalism"
+                }
+            }
+        ],
+        "statistics": {
+            "total_premium": 500,
+            "discounted_premium": 475,
+            "tax_amount": 9.5
+        }
+    },
+    "promoCodeValid": true,
+    "promoDiscount": 10
+}

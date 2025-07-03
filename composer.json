@@ -10,6 +10,7 @@
         "doctrine/doctrine-bundle": "^2.15",
         "doctrine/doctrine-migrations-bundle": "^3.4.2",
         "doctrine/orm": "^3.4.0",
+        "dompdf/dompdf": "^3.1",
         "lexik/jwt-authentication-bundle": "^2.21",
         "phpoffice/phpspreadsheet": "^4.3.1",
         "symfony/brevo-mailer": "7.3.*",

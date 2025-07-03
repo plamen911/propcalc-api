@@ -24,6 +24,7 @@ security:
         - { path: ^/api/v1/auth/anonymous, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/auth-test/public, roles: PUBLIC_ACCESS }
         - { path: ^/api/v1/admin/auth/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/tariff/pdf, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
