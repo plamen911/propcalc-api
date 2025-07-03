@@ -105,57 +105,55 @@ class PdfService
                     width: 100%;
                     max-width: 700px;
                     margin: 0 auto;
-                    padding: 15px;
+                    padding: 10px;
                     box-sizing: border-box;
                     overflow-x: hidden;
                 }
 
-                /* Header styles */
+                /* Header styles - optimized for printing */
                 .header {
                     background-color: #8b2131;
                     color: white;
-                    padding: 15px;
+                    padding: 10px;
                     text-align: center;
                     border-radius: 5px 5px 0 0;
-                    margin-bottom: 20px;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    margin-bottom: 15px;
                     width: 100%;
                     box-sizing: border-box;
                     overflow-x: hidden;
                 }
                 .header h1 {
-                    margin: 0 0 10px 0;
-                    font-size: 24px;
+                    margin: 0 0 5px 0;
+                    font-size: 20px;
                     letter-spacing: 0.5px;
                 }
                 .header p {
                     margin: 0;
-                    font-size: 14px;
+                    font-size: 12px;
                     opacity: 0.9;
                 }
 
-                /* Section styles */
+                /* Section styles - optimized for printing */
                 .section {
-                    margin-bottom: 20px;
-                    border: 1px solid #e0e0e0;
-                    padding: 15px;
+                    margin-bottom: 15px;
+                    border: 1px solid #cccccc;
+                    padding: 10px;
                     width: 100%;
                     box-sizing: border-box;
                     border-radius: 5px;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
                     background-color: #fafafa;
                     overflow-x: hidden;
                 }
                 .section-title {
-                    font-size: 18px;
+                    font-size: 16px;
                     font-weight: bold;
-                    margin-bottom: 15px;
+                    margin-bottom: 10px;
                     color: #8b2131;
-                    padding-bottom: 8px;
-                    border-bottom: 1px solid #eee;
+                    padding-bottom: 5px;
+                    border-bottom: 1px solid #dddddd;
                 }
                 .item {
-                    margin-bottom: 15px;
+                    margin-bottom: 10px;
                     width: 100%;
                     box-sizing: border-box;
                     overflow-x: hidden;
@@ -169,53 +167,51 @@ class PdfService
                     display: inline-block;
                 }
 
-                /* Table styles */
+                /* Table styles - optimized for printing */
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 10px;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                    margin-bottom: 8px;
                     box-sizing: border-box;
                     table-layout: fixed;
                 }
                 table, th, td {
-                    border: 1px solid #e0e0e0;
+                    border: 1px solid #aaaaaa;
                 }
                 th, td {
-                    padding: 10px;
+                    padding: 5px 6px;
                     text-align: left;
                     word-wrap: break-word;
                     overflow-wrap: break-word;
+                    font-size: 11px;
                 }
                 th {
-                    background-color: #f5f5f5;
+                    background-color: #f0f0f0;
                     font-weight: bold;
-                    color: #555;
+                    color: #333;
                 }
                 tbody tr:nth-child(even) {
                     background-color: #f9f9f9;
                 }
-                tbody tr:hover {
-                    background-color: #f0f0f0;
-                }
                 tfoot tr {
-                    background-color: #f5f5f5;
+                    background-color: #f0f0f0;
                 }
                 tfoot th {
                     font-weight: bold;
+                    font-size: 12px;
                 }
 
-                /* Footer styles */
+                /* Footer styles - optimized for printing */
                 .footer {
                     text-align: center;
-                    margin-top: 30px;
-                    padding-top: 15px;
-                    font-size: 12px;
-                    color: #777;
-                    border-top: 1px solid #eee;
+                    margin-top: 20px;
+                    padding-top: 10px;
+                    font-size: 10px;
+                    color: #555;
+                    border-top: 1px solid #cccccc;
                 }
                 .footer p {
-                    margin: 5px 0;
+                    margin: 3px 0;
                 }
 
                 /* Utility classes */
@@ -265,8 +261,8 @@ class PdfService
                         <table>
                             <thead>
                                 <tr>
-                                    <th style="width: 65%;">Клаузи</th>
-                                    <th style="width: 35%;" class="text-right">Застрахователна сума</th>
+                                    <th style="width: 70%;">Клаузи</th>
+                                    <th style="width: 30%;" class="text-right">Застрахователна сума</th>
                                 </tr>
                             </thead>
                             <tbody>';
