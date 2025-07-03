@@ -83,25 +83,164 @@ class PdfService
         // Build the HTML content
         $content = '
         <!DOCTYPE html>
-        <html lang="bg">
+        <html lang="bg" style="width: 100%; max-width: 100%; overflow-x: hidden;">
         <head>
             <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Тарифа - ' . $selectedTariff['name'] . '</title>
             <style>
-                body { font-family: "DejaVu Sans", "Arial Unicode MS", Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-                .header { background-color: #8b2131; color: white; padding: 15px; text-align: center; }
-                .section { margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; width: 100%; box-sizing: border-box; }
-                .section-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #8b2131; }
-                .item { margin-bottom: 8px; }
-                .label { font-weight: bold; }
-                .value { }
-                .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #777; }
-                table { width: 100%; border-collapse: collapse; }
-                table, th, td { border: 1px solid #ddd; }
-                th, td { padding: 8px; text-align: left; }
-                th { background-color: #f2f2f2; }
-                .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+                /* Base styles */
+                body {
+                    font-family: "DejaVu Sans", "Arial Unicode MS", Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #fff;
+                    width: 100%;
+                    max-width: 100%;
+                    overflow-x: hidden;
+                }
+                .container {
+                    width: 100%;
+                    max-width: 700px;
+                    margin: 0 auto;
+                    padding: 15px;
+                    box-sizing: border-box;
+                    overflow-x: hidden;
+                }
+
+                /* Header styles */
+                .header {
+                    background-color: #8b2131;
+                    color: white;
+                    padding: 15px;
+                    text-align: center;
+                    border-radius: 5px 5px 0 0;
+                    margin-bottom: 20px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                    width: 100%;
+                    box-sizing: border-box;
+                    overflow-x: hidden;
+                }
+                .header h1 {
+                    margin: 0 0 10px 0;
+                    font-size: 24px;
+                    letter-spacing: 0.5px;
+                }
+                .header p {
+                    margin: 0;
+                    font-size: 14px;
+                    opacity: 0.9;
+                }
+
+                /* Section styles */
+                .section {
+                    margin-bottom: 20px;
+                    border: 1px solid #e0e0e0;
+                    padding: 15px;
+                    width: 100%;
+                    box-sizing: border-box;
+                    border-radius: 5px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                    background-color: #fafafa;
+                    overflow-x: hidden;
+                }
+                .section-title {
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin-bottom: 15px;
+                    color: #8b2131;
+                    padding-bottom: 8px;
+                    border-bottom: 1px solid #eee;
+                }
+                .item {
+                    margin-bottom: 15px;
+                    width: 100%;
+                    box-sizing: border-box;
+                    overflow-x: hidden;
+                }
+                .label {
+                    font-weight: bold;
+                    display: inline-block;
+                    min-width: 200px;
+                }
+                .value {
+                    display: inline-block;
+                }
+
+                /* Table styles */
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 10px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                    box-sizing: border-box;
+                    table-layout: fixed;
+                }
+                table, th, td {
+                    border: 1px solid #e0e0e0;
+                }
+                th, td {
+                    padding: 10px;
+                    text-align: left;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                }
+                th {
+                    background-color: #f5f5f5;
+                    font-weight: bold;
+                    color: #555;
+                }
+                tbody tr:nth-child(even) {
+                    background-color: #f9f9f9;
+                }
+                tbody tr:hover {
+                    background-color: #f0f0f0;
+                }
+                tfoot tr {
+                    background-color: #f5f5f5;
+                }
+                tfoot th {
+                    font-weight: bold;
+                }
+
+                /* Footer styles */
+                .footer {
+                    text-align: center;
+                    margin-top: 30px;
+                    padding-top: 15px;
+                    font-size: 12px;
+                    color: #777;
+                    border-top: 1px solid #eee;
+                }
+                .footer p {
+                    margin: 5px 0;
+                }
+
+                /* Utility classes */
+                .text-right {
+                    text-align: right;
+                }
+                .text-center {
+                    text-align: center;
+                }
+                .text-bold {
+                    font-weight: bold;
+                }
+                .highlight {
+                    color: #8b2131;
+                    font-weight: bold;
+                }
+
+                /* Dot indicators */
+                .dot {
+                    display: inline-block;
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
+                    margin-right: 5px;
+                }
                 .blue-dot { background-color: #3498db; }
                 .green-dot { background-color: #2ecc71; }
                 .yellow-dot { background-color: #f1c40f; }
@@ -112,51 +251,44 @@ class PdfService
             <div class="container">
                 <div class="header">
                     <h1>Тарифа - ' . $selectedTariff['name'] . '</h1>
-                    <p>Дата: ' . date('d.m.Y H:i:s') . '</p>
+                    <p>Генерирано на: ' . date('d.m.Y H:i:s') . '</p>
                 </div>';
 
         // Tariff information section
         $content .= '
                 <div class="section">
-                    <div class="section-title">Вие избрахте покритие "' . $selectedTariff['name'] . '" за Вашето имущество</div>';
-
-        // Display clauses if available
-        if (isset($selectedTariff['tariff_preset_clauses']) && !empty($selectedTariff['tariff_preset_clauses'])) {
-            $content .= '
-                    <div class="item" style="margin-top: 15px; background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
+                    <div class="section-title">
+                        <span class="highlight">✓</span> Вие избрахте покритие "' . $selectedTariff['name'] . '" за Вашето имущество
+                    </div>';
+        $content .= '
+                    <div class="item">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Клаузи</th>
-                                    <th style="text-align: right;">Застрахователна сума</th>
+                                    <th style="width: 65%;">Клаузи</th>
+                                    <th style="width: 35%;" class="text-right">Застрахователна сума</th>
                                 </tr>
                             </thead>
                             <tbody>';
-
+        // Display clauses if available
+        if (!empty($selectedTariff['tariff_preset_clauses'])) {
             foreach ($selectedTariff['tariff_preset_clauses'] as $clause) {
                 // Only display clauses with non-zero amounts
                 if (isset($clause['tariff_amount']) && floatval($clause['tariff_amount']) > 0) {
                     $content .= '
                                 <tr>
                                     <td>' . $clause['insurance_clause']['name'] . '</td>
-                                    <td style="text-align: right; font-weight: bold; color: #8b2131;">' . $this->formatCurrency($clause['tariff_amount']) . ' ' . $currencySymbol . '</td>
+                                    <td class="text-right highlight">' . $this->formatCurrency($clause['tariff_amount']) . ' ' . $currencySymbol . '</td>
                                 </tr>';
                 }
             }
-
-            $content .= '
-                            </tbody>
-                        </table>
-                    </div>';
         }
+
+        $content .= '</tbody>
+                    <tfoot>';
 
         // Statistics section
         if (isset($selectedTariff['statistics'])) {
-            $content .= '
-                    <div class="item" style="margin-top: 20px;">
-                        <table>
-                            <tbody>';
-
             // Insurance premium
             if (isset($selectedTariff['statistics']['total_premium'])) {
                 $insurancePremiumAmount = $this->calculate(
@@ -168,8 +300,8 @@ class PdfService
 
                 $content .= '
                                 <tr>
-                                    <td><span class="dot blue-dot"></span> Застрахователна премия</td>
-                                    <td style="text-align: right; font-weight: bold; color: #8b2131;">' . $this->formatCurrency($insurancePremiumAmount) . ' ' . $currencySymbol . '</td>
+                                    <th>Застрахователна премия</th>
+                                    <th class="text-right highlight">' . $this->formatCurrency($insurancePremiumAmount) . ' ' . $currencySymbol . '</th>
                                 </tr>';
             }
 
@@ -184,8 +316,8 @@ class PdfService
 
                 $content .= '
                                 <tr>
-                                    <td><span class="dot green-dot"></span> Застрахователна премия след отстъпка ' . $selectedTariff['discount_percent'] . '%</td>
-                                    <td style="text-align: right; font-weight: bold; color: #8b2131;">' . $this->formatCurrency($regularDiscountAmount) . ' ' . $currencySymbol . '</td>
+                                    <th>Застрахователна премия след отстъпка ' . $selectedTariff['discount_percent'] . '%</th>
+                                    <th class="text-right highlight">' . $this->formatCurrency($regularDiscountAmount) . ' ' . $currencySymbol . '</th>
                                 </tr>';
             }
 
@@ -200,8 +332,8 @@ class PdfService
 
                 $content .= '
                                 <tr>
-                                    <td><span class="dot green-dot"></span> Застрахователна премия след приложен промо код ' . $promoDiscount . '%</td>
-                                    <td style="text-align: right; font-weight: bold; color: #8b2131;">' . $this->formatCurrency($promoDiscountAmount) . ' ' . $currencySymbol . '</td>
+                                    <th>Застрахователна премия след приложен промо код ' . $promoDiscount . '%</th>
+                                    <th class="text-right highlight">' . $this->formatCurrency($promoDiscountAmount) . ' ' . $currencySymbol . '</th>
                                 </tr>';
             }
 
@@ -216,8 +348,8 @@ class PdfService
 
                 $content .= '
                                 <tr>
-                                    <td><span class="dot yellow-dot"></span> Данък върху застрахователната премия ' . $selectedTariff['tax_percent'] . '%</td>
-                                    <td style="text-align: right; font-weight: bold; color: #8b2131;">' . $this->formatCurrency($taxAmount) . ' ' . $currencySymbol . '</td>
+                                    <th>Данък върху застрахователната премия ' . $selectedTariff['tax_percent'] . '%</th>
+                                    <th class="text-right highlight">' . $this->formatCurrency($taxAmount) . ' ' . $currencySymbol . '</th>
                                 </tr>';
             }
 
@@ -231,15 +363,16 @@ class PdfService
 
             $content .= '
                                 <tr>
-                                    <td><span class="dot red-dot"></span> Общо дължима сума за една година</td>
-                                    <td style="text-align: right; font-weight: bold; color: #8b2131;">' . $this->formatCurrency($totalAmount) . ' ' . $currencySymbol . '</td>
+                                    <th>Общо дължима сума за една година</th>
+                                    <th class="text-right highlight">' . $this->formatCurrency($totalAmount) . ' ' . $currencySymbol . '</th>
                                 </tr>';
 
-            $content .= '
-                            </tbody>
+        }
+
+        $content .= '
+                            </tfoot>
                         </table>
                     </div>';
-        }
 
         $content .= '
                 </div>';
@@ -247,8 +380,8 @@ class PdfService
         // Footer
         $content .= '
                 <div class="footer">
-                    <p>Това е автоматично генериран документ.</p>
-                    <p>&copy; ' . date('Y') . ' ЗБ "Дженерал Брокер Клуб" ООД. Всички права запазени.</p>
+                    <p>Това е автоматично генериран документ и не изисква подпис.</p>
+                    <p class="text-center">&copy; ' . date('Y') . ' ЗБ "Дженерал Брокер Клуб" ООД. Всички права запазени.</p>
                 </div>
             </div>
         </body>
