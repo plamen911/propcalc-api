@@ -5,22 +5,38 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Repository\AppConfigRepository;
+use App\Repository\EstateTypeRepository;
+use App\Repository\SettlementRepository;
+use App\Repository\WaterDistanceRepository;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Doctrine\DBAL\Connection;
 
 class PdfService
 {
     private LoggerInterface $logger;
     private AppConfigRepository $appConfigRepository;
+    private Connection $connection;
+    private SettlementRepository $settlementRepository;
+    private EstateTypeRepository $estateTypeRepository;
+    private WaterDistanceRepository $waterDistanceRepository;
 
     public function __construct(
         LoggerInterface $logger,
-        AppConfigRepository $appConfigRepository
+        AppConfigRepository $appConfigRepository,
+        Connection $connection,
+        SettlementRepository $settlementRepository,
+        EstateTypeRepository $estateTypeRepository,
+        WaterDistanceRepository $waterDistanceRepository
     ) {
         $this->logger = $logger;
         $this->appConfigRepository = $appConfigRepository;
+        $this->connection = $connection;
+        $this->settlementRepository = $settlementRepository;
+        $this->estateTypeRepository = $estateTypeRepository;
+        $this->waterDistanceRepository = $waterDistanceRepository;
     }
 
     /**
@@ -75,6 +91,7 @@ class PdfService
         $selectedTariff = $tariffData['selectedTariff'] ?? null;
         $promoCodeValid = $tariffData['promoCodeValid'] ?? false;
         $promoDiscount = $tariffData['promoDiscount'] ?? 0;
+        $estateData = $tariffData['estateData'] ?? [];
 
         if (!$selectedTariff) {
             throw new \InvalidArgumentException('Selected tariff data is required');
@@ -372,6 +389,74 @@ class PdfService
 
         $content .= '
                 </div>';
+
+        // Estate Data Section
+        if (!empty($estateData)) {
+            // Get human-readable names for IDs
+            $settlementName = '....';
+            $estateTypeName = '....';
+            $estateSubtypeName = '....';
+            $distanceToWaterName = '....';
+
+            if (!empty($estateData['settlement_id'])) {
+                $settlement = $this->settlementRepository->find($estateData['settlement_id']);
+                if ($settlement) {
+                    $settlementName = $settlement->getFullName();
+                }
+            }
+
+            if (!empty($estateData['estate_type_id'])) {
+                $estateType = $this->estateTypeRepository->find($estateData['estate_type_id']);
+                if ($estateType) {
+                    $estateTypeName = $estateType->getName();
+                }
+            }
+
+            if (!empty($estateData['estate_subtype_id'])) {
+                $estateSubtype = $this->estateTypeRepository->find($estateData['estate_subtype_id']);
+                if ($estateSubtype) {
+                    $estateSubtypeName = $estateSubtype->getName();
+                }
+            }
+
+            if (!empty($estateData['distance_to_water_id'])) {
+                $distanceToWater = $this->waterDistanceRepository->find($estateData['distance_to_water_id']);
+                if ($distanceToWater) {
+                    $distanceToWaterName = $distanceToWater->getName();
+                }
+            }
+
+            $content .= '
+                <div class="section">
+                    <div class="section-title">
+                        Данни за имота
+                    </div>
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td style="width: 60%;"><strong>Населено място на имота:</strong></td>
+                                <td style="width: 40%;">' . $settlementName . '</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tип имот:</strong></td>
+                                <td>' . $estateTypeName . '</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Вид имот:</strong></td>
+                                <td>' . $estateSubtypeName . '</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Отстояние от воден басейн:</strong></td>
+                                <td>' . $distanceToWaterName . '</td>
+                            </tr>
+                            <tr>
+                                <td><strong>РЗП:</strong></td>
+                                <td>' . ($estateData['area_sq_meters'] ? $estateData['area_sq_meters'] . ' кв.м.' : '....') . '</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>';
+        }
 
         // Footer
         $content .= '
