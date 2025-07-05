@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\TariffPreset;
 use App\Entity\TariffPresetClause;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -105,7 +106,7 @@ class TariffPresetClauseRepository extends ServiceEntityRepository
      * @param array $orderBy Optional ordering criteria
      * @return array Array of TariffPresetClause objects
      */
-    public function findByTariffPresetWithActiveInsuranceClauses($tariffPreset, array $orderBy = ['position' => 'ASC']): array
+    public function findByTariffPresetWithActiveInsuranceClauses(TariffPreset $tariffPreset, array $orderBy = ['position' => 'ASC']): array
     {
         $qb = $this->createQueryBuilder('tpc')
             ->addSelect('tp', 'ic')

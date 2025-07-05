@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Constants\AppConstants;
 use App\Repository\AppConfigRepository;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
@@ -19,10 +20,8 @@ class EmailService
     private ParameterBagInterface $params;
     private LoggerInterface $logger;
     private AppConfigRepository $appConfigRepository;
-    //private string $adminEmail = 'teodor.daike@gmail.com';
-    private string $adminEmail = 'general@zastrahovaite.com';
-    //private string $adminEmail = 'plamen326@gmail.com';
-    private string $senderName = 'ЗБ "Дженерал Брокер Клуб" ООД';
+    private string $adminEmail = AppConstants::ADMIN_EMAIL;
+    private string $senderName = AppConstants::COMPANY_NAME;
 
     public function __construct(
         MailerInterface $mailer,
@@ -49,6 +48,12 @@ class EmailService
         try {
             // Send email to the client
             $this->sendClientEmail($policy, $additionalData);
+
+            // Check if a promotional code is applied to the order
+            if ($policy->getPromotionalCode() && $policy->getPromotionalCode()->getUser()) {
+                // Send email to the promotional code owner
+                $this->sendPromotionalCodeOwnerEmail($policy, $additionalData);
+            }
 
             return true;
         } catch (\Exception $e) {
@@ -81,8 +86,73 @@ class EmailService
 //        $this->adminEmail = 'plamen@lynxlake.org';
 
         $email = (new Email())
-            ->from(new Address($this->adminEmail, 'ЗБ "Дженерал Брокер Клуб" ООД'))
+            ->from(new Address($this->adminEmail, AppConstants::COMPANY_NAME))
             ->to($clientEmail)
+            ->bcc($this->adminEmail)
+            ->subject($subject)
+            ->html($content);
+
+        $this->mailer->send($email);
+    }
+
+    /**
+     * Send an email notification to the promotional code owner
+     *
+     * @param InsurancePolicy $policy The insurance policy data
+     * @param array $additionalData Additional data needed for the email
+     * @throws TransportExceptionInterface
+     */
+    private function sendPromotionalCodeOwnerEmail(InsurancePolicy $policy, array $additionalData = []): void
+    {
+        $promotionalCode = $policy->getPromotionalCode();
+        $owner = $promotionalCode->getUser();
+        $ownerEmail = $owner->getEmail();
+
+        if (!$ownerEmail) {
+            $this->logger->warning('Promotional code owner email not provided, skipping notification');
+            return;
+        }
+
+        $subject = 'Използван промоционален код - ' . $promotionalCode->getCode();
+
+        // Create a simple HTML content for the email
+        $content = '
+        <!DOCTYPE html>
+        <html lang="bg">
+        <head>
+            <meta charset="UTF-8">
+            <title>Използван промоционален код</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #8b2131; color: white; padding: 15px; text-align: center; }
+                .section { margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; }
+                .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #777; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Използван промоционален код</h1>
+                </div>
+                <div class="section">
+                    <p>Здравейте,</p>
+                    <p>Вашият промоционален код <strong>' . $promotionalCode->getCode() . '</strong> беше използван за поръчка с номер <strong>' . $policy->getCode() . '</strong>.</p>
+                    <p>Отстъпка: <strong>' . $promotionalCode->getDiscountPercentage() . '%</strong></p>
+                    <p>Дата на използване: <strong>' . (new \DateTime())->format('d.m.Y H:i:s') . '</strong></p>
+                    <p>Поздрави,<br>' . AppConstants::COMPANY_NAME . '</p>
+                </div>
+                <div class="footer">
+                    <p>Това е автоматично генерирано съобщение. Моля, не отговаряйте на този имейл.</p>
+                    <p>&copy; ' . date('Y') . ' ' . AppConstants::COMPANY_NAME . '. Всички права запазени.</p>
+                </div>
+            </div>
+        </body>
+        </html>';
+
+        $email = (new Email())
+            ->from(new Address($this->adminEmail, AppConstants::COMPANY_NAME))
+            ->to($ownerEmail)
             ->bcc($this->adminEmail)
             ->subject($subject)
             ->html($content);
@@ -444,7 +514,7 @@ class EmailService
         $content .= '
                 <div class="footer">
                     <p>Това е автоматично генерирано съобщение. Моля, не отговаряйте на този имейл.</p>
-                    <p>&copy; ' . date('Y') . ' ЗБ "Дженерал Брокер Клуб" ООД. Всички права запазени.</p>
+                    <p>&copy; ' . date('Y') . ' ' . AppConstants::COMPANY_NAME . '. Всички права запазени.</p>
                 </div>
             </div>
         </body>
