@@ -9,15 +9,15 @@
         "ext-iconv": "*",
         "doctrine/doctrine-bundle": "^2.15",
         "doctrine/doctrine-migrations-bundle": "^3.4.2",
-        "doctrine/orm": "^3.4.0",
+        "doctrine/orm": "^3.5.0",
         "dompdf/dompdf": "^3.1",
         "lexik/jwt-authentication-bundle": "^2.21",
-        "phpoffice/phpspreadsheet": "^4.3.1",
+        "phpoffice/phpspreadsheet": "^4.4.0",
         "symfony/brevo-mailer": "7.3.*",
         "symfony/console": "7.3.*",
         "symfony/dependency-injection": "7.3.*",
         "symfony/dotenv": "7.3.*",
-        "symfony/flex": "^2.7.1",
+        "symfony/flex": "^2.8.1",
         "symfony/framework-bundle": "7.3.*",
         "symfony/http-client": "7.3.*",
         "symfony/mailer": "7.3.*",
@@ -80,6 +80,6 @@
         }
     },
     "require-dev": {
-        "symfony/maker-bundle": "^1.63"
+        "symfony/maker-bundle": "^1.64"
     }
 }
