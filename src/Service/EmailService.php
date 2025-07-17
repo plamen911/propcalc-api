@@ -20,6 +20,7 @@ class EmailService
     private ParameterBagInterface $params;
     private LoggerInterface $logger;
     private AppConfigRepository $appConfigRepository;
+    private StatisticsService $statisticsService;
     private string $adminEmail = AppConstants::ADMIN_EMAIL;
     private string $senderName = AppConstants::COMPANY_NAME;
 
@@ -27,12 +28,14 @@ class EmailService
         MailerInterface $mailer,
         ParameterBagInterface $params,
         LoggerInterface $logger,
-        AppConfigRepository $appConfigRepository
+        AppConfigRepository $appConfigRepository,
+        StatisticsService $statisticsService
     ) {
         $this->mailer = $mailer;
         $this->params = $params;
         $this->logger = $logger;
         $this->appConfigRepository = $appConfigRepository;
+        $this->statisticsService = $statisticsService;
     }
 
     /**
@@ -218,6 +221,13 @@ class EmailService
         $taxPercentsConfig = $this->appConfigRepository->findOneBy(['name' => 'TAX_PERCENTS']);
         $taxPercents = $taxPercentsConfig ? $taxPercentsConfig->getValue() : '';
 
+        $stats = $this->statisticsService->calculate(
+            insurancePremiumAmount: (float) $policy->getSubtotal(),
+            taxPercent: (float) $taxPercents,
+            regularDiscountPercent: (float) $policy->getDiscount(),
+            promoDiscountPercent: (float) $policy->getPromotionalCodeDiscount()
+        );
+
         // Build the email content
         $content = '
         <!DOCTYPE html>
@@ -300,21 +310,18 @@ class EmailService
                             <th style="text-align: right;">' . number_format($policy->getSubtotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
                         </tr>';
 
-
-        // todo: review the amount calculation!
         if ($policy->getDiscount() > 0) {
             $content .= '<tr>
                             <th>СЛЕД ОТСТЪПКА -' . $policy->getDiscount() . '%</th>
-                            <th style="text-align: right;">' . number_format($policy->getSubtotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
+                            <th style="text-align: right;">' . number_format($stats['regularDiscountAmount'], 2, '.', ' ') . ' '.$currencySymbol.'</th>
                         </tr>';
         }
         if ($policy->getPromotionalCodeDiscount() > 0) {
             $content .= '<tr>
                             <th>ПРОМО КОД -' . $policy->getPromotionalCodeDiscount() . '%</th>
-                            <th style="text-align: right;">' . number_format($policy->getSubtotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
+                            <th style="text-align: right;">' . number_format($stats['promoDiscountAmount'], 2, '.', ' ') . ' '.$currencySymbol.'</th>
                         </tr>';
         }
-
 
         $content .= '
                         <tr>
@@ -519,12 +526,29 @@ class EmailService
                     </div>
                 </div>';
 
+        // office phones
+        $content .= '<div class="section">
+            <div class="section-title">За контакти с нас</div>
+            <div class="item">
+                <span class="label"><a href="tel:+359899116117">0899 116 117</a></span>
+                <span class="value">Теодор Дайке</span>
+            </div>
+            <div class="item">
+                <span class="label"><a href="tel:+359892391959">0892 39 19 59</a></span>
+                <span class="value">Нина Цветанова</span>
+            </div>
+            <div class="item">
+                <span class="label"><a href="tel:+35964803304">064 803304</a></span>
+                <span class="value">Офис</span>
+            </div>
+        </div>';
+
         $content .= '</div>';
 
         // Footer
         $content .= '
                 <div class="footer">
-                    <p>Това е автоматично генерирано съобщение. Моля, не отговаряйте на този имейл.</p>
+                    <!--<p>Това е автоматично генерирано съобщение. Моля, не отговаряйте на този имейл.</p>-->
                     <p>&copy; ' . date('Y') . ' ' . AppConstants::COMPANY_NAME . '. Всички права запазени.</p>
                 </div>
             </div>

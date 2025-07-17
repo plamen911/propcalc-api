@@ -10,6 +10,7 @@ use App\Repository\SettlementRepository;
 use App\Repository\WaterDistanceRepository;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Exception;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Doctrine\DBAL\Connection;
@@ -18,25 +19,25 @@ class PdfService
 {
     private LoggerInterface $logger;
     private AppConfigRepository $appConfigRepository;
-    private Connection $connection;
     private SettlementRepository $settlementRepository;
     private EstateTypeRepository $estateTypeRepository;
     private WaterDistanceRepository $waterDistanceRepository;
+    private StatisticsService $statisticsService;
 
     public function __construct(
         LoggerInterface $logger,
         AppConfigRepository $appConfigRepository,
-        Connection $connection,
         SettlementRepository $settlementRepository,
         EstateTypeRepository $estateTypeRepository,
-        WaterDistanceRepository $waterDistanceRepository
+        WaterDistanceRepository $waterDistanceRepository,
+        StatisticsService $statisticsService
     ) {
         $this->logger = $logger;
         $this->appConfigRepository = $appConfigRepository;
-        $this->connection = $connection;
         $this->settlementRepository = $settlementRepository;
         $this->estateTypeRepository = $estateTypeRepository;
         $this->waterDistanceRepository = $waterDistanceRepository;
+        $this->statisticsService = $statisticsService;
     }
 
     /**
@@ -44,6 +45,7 @@ class PdfService
      *
      * @param array $tariffData The tariff data
      * @return string The PDF content as a binary string
+     * @throws Exception
      */
     public function generateTariffPdf(array $tariffData): string
     {
@@ -64,7 +66,7 @@ class PdfService
             $options->set('defaultMediaType', 'all');
             $options->set('isFontSubsettingEnabled', true);
 
-            // Create Dompdf instance
+            // Create a Dompdf instance
             $dompdf = new Dompdf($options);
             $dompdf->loadHtml($content, 'UTF-8');
             $dompdf->setPaper('A4', 'portrait');
@@ -72,7 +74,7 @@ class PdfService
 
             // Return PDF as string
             return $dompdf->output();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error('Failed to generate tariff PDF: ' . $e->getMessage());
             throw $e;
         }
@@ -300,83 +302,65 @@ class PdfService
         $content .= '</tbody>
                     <tfoot>';
 
+        $stats = $this->statisticsService->calculate(
+            insurancePremiumAmount: (float) $selectedTariff['statistics']['total_premium'],
+            taxPercent: (float) $selectedTariff['tax_percent'] ?? 0,
+            regularDiscountPercent: (float) $selectedTariff['discount_percent'] ?? 0,
+            promoDiscountPercent: (float) $promoDiscount
+        );
+
         // Statistics section
         if (isset($selectedTariff['statistics'])) {
             // Insurance premium
             if (isset($selectedTariff['statistics']['total_premium'])) {
-                $insurancePremiumAmount = $this->calculate(
-                    $selectedTariff['statistics']['total_premium'],
-                    $selectedTariff['tax_percent'] ?? 0,
-                    $selectedTariff['discount_percent'] ?? 0,
-                    $promoDiscount
-                )['insurancePremiumAmount'];
+                $insurancePremiumAmount = $stats['insurancePremiumAmount'];
 
                 $content .= '
                                 <tr>
-                                    <th>Застрахователна премия</th>
+                                    <th>БАЗОВА СУМА</th>
                                     <th class="text-right highlight">' . $this->formatCurrency($insurancePremiumAmount) . ' ' . $currencySymbol . '</th>
                                 </tr>';
             }
 
             // Discounted premium
             if (isset($selectedTariff['statistics']['discounted_premium']) && isset($selectedTariff['discount_percent']) && $selectedTariff['discount_percent'] > 0) {
-                $regularDiscountAmount = $this->calculate(
-                    $selectedTariff['statistics']['total_premium'],
-                    $selectedTariff['tax_percent'] ?? 0,
-                    $selectedTariff['discount_percent'] ?? 0,
-                    $promoDiscount
-                )['regularDiscountAmount'];
+                $regularDiscountAmount = $stats['regularDiscountAmount'];
 
                 $content .= '
                                 <tr>
-                                    <th>Застрахователна премия след отстъпка ' . $selectedTariff['discount_percent'] . '%</th>
+                                    <th>СЛЕД ОТСТЪПКА -' . $selectedTariff['discount_percent'] . '%</th>
                                     <th class="text-right highlight">' . $this->formatCurrency($regularDiscountAmount) . ' ' . $currencySymbol . '</th>
                                 </tr>';
             }
 
             // Promo code discount
             if ($promoCodeValid && $promoDiscount > 0 && isset($selectedTariff['statistics']['discounted_premium'])) {
-                $promoDiscountAmount = $this->calculate(
-                    $selectedTariff['statistics']['total_premium'],
-                    $selectedTariff['tax_percent'] ?? 0,
-                    $selectedTariff['discount_percent'] ?? 0,
-                    $promoDiscount
-                )['promoDiscountAmount'];
+                $promoDiscountAmount = $stats['promoDiscountAmount'];
 
                 $content .= '
                                 <tr>
-                                    <th>Застрахователна премия след приложен промо код ' . $promoDiscount . '%</th>
+                                    <th>ПРОМО КОД -' . $promoDiscount . '%</th>
                                     <th class="text-right highlight">' . $this->formatCurrency($promoDiscountAmount) . ' ' . $currencySymbol . '</th>
                                 </tr>';
             }
 
             // Tax amount
             if (isset($selectedTariff['statistics']['tax_amount']) && isset($selectedTariff['tax_percent'])) {
-                $taxAmount = $this->calculate(
-                    $selectedTariff['statistics']['total_premium'],
-                    $selectedTariff['tax_percent'] ?? 0,
-                    $selectedTariff['discount_percent'] ?? 0,
-                    $promoDiscount
-                )['taxAmount'];
+                $taxAmount = $stats['taxAmount'];
 
                 $content .= '
                                 <tr>
-                                    <th>Данък върху застрахователната премия ' . $selectedTariff['tax_percent'] . '%</th>
+                                    <th>ДЗП +' . $selectedTariff['tax_percent'] . '%</th>
                                     <th class="text-right highlight">' . $this->formatCurrency($taxAmount) . ' ' . $currencySymbol . '</th>
                                 </tr>';
             }
 
             // Total amount
-            $totalAmount = $this->calculate(
-                $selectedTariff['statistics']['total_premium'],
-                $selectedTariff['tax_percent'] ?? 0,
-                $selectedTariff['discount_percent'] ?? 0,
-                $promoDiscount
-            )['totalAmount'];
+            $totalAmount = $stats['totalAmount'];
 
             $content .= '
                                 <tr>
-                                    <th>Общо дължима сума за една година</th>
+                                    <th>ДЪЛЖИМА СУМА ЗА ГОДИНА</th>
                                     <th class="text-right highlight">' . $this->formatCurrency($totalAmount) . ' ' . $currencySymbol . '</th>
                                 </tr>';
 
@@ -472,7 +456,7 @@ class PdfService
     }
 
     /**
-     * Format currency with thousand separators (spaces)
+     * Format currency with a thousand separators (spaces)
      *
      * @param float|string $value The value to format
      * @param int $fraction The number of decimal places
@@ -485,44 +469,5 @@ class PdfService
             return '0.00';
         }
         return number_format($number, $fraction, '.', ' ');
-    }
-
-    /**
-     * Calculate insurance premium, discounts, taxes, and total amounts
-     *
-     * @param float|string $insurancePremiumAmount The insurance premium amount
-     * @param float|string $taxPercent The tax percentage
-     * @param float|string $regularDiscountPercent The regular discount percentage
-     * @param float|string $promoDiscountPercent The promo discount percentage
-     * @return array The calculated amounts
-     */
-    private function calculate($insurancePremiumAmount, $taxPercent, $regularDiscountPercent, $promoDiscountPercent = 0): array
-    {
-        $insurancePremiumAmount = floatval($insurancePremiumAmount);
-        $taxPercent = floatval($taxPercent);
-        $regularDiscountPercent = floatval($regularDiscountPercent);
-        $promoDiscountPercent = floatval($promoDiscountPercent);
-
-        $regularDiscountAmount = round($insurancePremiumAmount - ($insurancePremiumAmount * ($regularDiscountPercent / 100)), 2);
-        $taxAmount = round($regularDiscountAmount * $taxPercent / 100, 2);
-        $totalAmount = round($regularDiscountAmount + $taxAmount, 2);
-        $promoDiscountAmount = 0.0;
-
-        if ($promoDiscountPercent > 0) {
-            $promoDiscountAmount = round($regularDiscountAmount - ($insurancePremiumAmount * ($promoDiscountPercent / 100)), 2);
-            $taxAmount = round($promoDiscountAmount * $taxPercent / 100, 2);
-            $totalAmount = round($promoDiscountAmount + $taxAmount, 2);
-        }
-
-        $totalAmountWithoutDiscount = round($insurancePremiumAmount + ($insurancePremiumAmount * $taxPercent / 100), 2);
-
-        return [
-            'insurancePremiumAmount' => $insurancePremiumAmount,
-            'regularDiscountAmount' => $regularDiscountAmount,
-            'promoDiscountAmount' => $promoDiscountAmount,
-            'taxAmount' => $taxAmount,
-            'totalAmount' => $totalAmount,
-            'totalAmountWithoutDiscount' => $totalAmountWithoutDiscount
-        ];
     }
 }

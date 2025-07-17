@@ -7,7 +7,7 @@ namespace App\Service;
 /**
  * Service for calculating insurance statistics
  */
-class CalcStatisticsService
+class StatisticsService
 {
     /**
      * Calculate insurance statistics based on premium amount and various discount percentages
@@ -23,12 +23,8 @@ class CalcStatisticsService
         float $insurancePremiumAmount,
         float $taxPercent,
         float $regularDiscountPercent,
-        float $promoDiscountPercent = 0
+        float $promoDiscountPercent = 0.0
     ): array {
-        // Ensure values are properly typed
-        $insurancePremiumAmount = (float) $insurancePremiumAmount;
-        $promoDiscountPercent = (float) $promoDiscountPercent;
-
         // Calculate regular discount amount
         $regularDiscountAmount = round($insurancePremiumAmount - ($insurancePremiumAmount * ($regularDiscountPercent / 100)), 2);
 
@@ -46,7 +42,7 @@ class CalcStatisticsService
             $totalAmount = round($promoDiscountAmount + $taxAmount, 2);
         }
 
-        // Calculate total amount without any discounts
+        // Calculate the total amount without any discounts
         $totalAmountWithoutDiscount = round($insurancePremiumAmount + ($insurancePremiumAmount * $taxPercent / 100), 2);
 
         // Return all calculated values
