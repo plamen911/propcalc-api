@@ -272,6 +272,14 @@ class EmailService
                     </div>';
         }
 
+        if ($policy->getPromotionalCodeDiscount() > 0) {
+            $content .= '
+                    <div class="item">
+                        <span class="label">Промо код:</span>
+                        <span class="value">' . $policy->getPromotionalCode()->getCode() . '</span>
+                    </div>';
+        }
+
         $content .= '
             <div class="item" style="margin-top: 15px;">
                 <table>
