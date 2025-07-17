@@ -301,7 +301,7 @@ class EmailService
                         </tr>';
         if ($policy->getDiscount() > 0) {
             $content .= '<tr>
-                            <th>Застр. премия след отстъпка от ' . $policy->getDiscount() . '%:</th>
+                            <th>Застр. премия след отстъпка ' . $policy->getDiscount() . '%:</th>
                             <th style="text-align: right;">' . number_format($policy->getSubtotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
                         </tr>';
         }
