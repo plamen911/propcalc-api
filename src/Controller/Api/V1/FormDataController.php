@@ -293,6 +293,26 @@ class FormDataController extends AbstractController
             'person_role_options' => $personRoleData,
             'id_number_type_options' => $idNumberTypeData,
             'property_checklist_items' => $propertyChecklistData,
+            'document_links' => self::getDocumentLinks(),
         ]);
+    }
+
+    // Document links
+    public static function getDocumentLinks(): array
+    {
+        return [
+            [
+                'uri' => 'https://propcalc.zastrahovaite.com/docs/propcalc/pre-contract-insurance-info.pdf',
+                'title' => 'Информация преди сключване на застрахователния договор'
+            ],
+            [
+                'uri' => 'https://propcalc.zastrahovaite.com/docs/propcalc/property-insurance-product-info.pdf',
+                'title' => 'Информационен документ за застрахователния продукт Бонус дом+'
+            ],
+            [
+                'uri' => 'https://propcalc.zastrahovaite.com/docs/propcalc/bonus-home-plus.pdf',
+                'title' => 'Общи условия по застраховка Бонус дом+'
+            ]
+        ];
     }
 }
