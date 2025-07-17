@@ -296,22 +296,33 @@ class EmailService
                     </tbody>
                     <tfoot>
                         <tr>
-                            <th>Застрахователна премия:</th>
+                            <th>БАЗОВА СУМА</th>
                             <th style="text-align: right;">' . number_format($policy->getSubtotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
                         </tr>';
+
+
+        // todo: review the amount calculation!
         if ($policy->getDiscount() > 0) {
             $content .= '<tr>
-                            <th>Застр. премия след отстъпка ' . $policy->getDiscount() . '%:</th>
+                            <th>СЛЕД ОТСТЪПКА -' . $policy->getDiscount() . '%</th>
                             <th style="text-align: right;">' . number_format($policy->getSubtotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
                         </tr>';
         }
+        if ($policy->getPromotionalCodeDiscount() > 0) {
+            $content .= '<tr>
+                            <th>ПРОМО КОД -' . $policy->getPromotionalCodeDiscount() . '%</th>
+                            <th style="text-align: right;">' . number_format($policy->getSubtotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
+                        </tr>';
+        }
+
+
         $content .= '
                         <tr>
-                            <th>Данък върху застрахователната премия '.$taxPercents.'%:</th>
+                            <th>ДЗП +'.$taxPercents.'%</th>
                             <th style="text-align: right;">' . number_format($policy->getSubtotalTax(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
                         </tr>
                         <tr>
-                            <th>Общо дължима сума за една година:</th>
+                            <th>ДЪЛЖИМА СУМА ЗА ГОДИНА</th>
                             <th style="text-align: right;">' . number_format($policy->getTotal(), 2, '.', ' ') . ' '.$currencySymbol.'</th>
                         </tr>
                     </tfoot>';
