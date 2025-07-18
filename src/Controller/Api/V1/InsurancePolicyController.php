@@ -7,6 +7,7 @@ namespace App\Controller\Api\V1;
 use App\Entity\InsurancePolicy;
 use App\Entity\InsurancePolicyPropertyChecklist;
 use App\Entity\InsurancePolicyClause;
+use App\Repository\AppConfigRepository;
 use App\Repository\InsurancePolicyRepository;
 use App\Repository\InsurancePolicyPropertyChecklistRepository;
 use App\Repository\SettlementRepository;
@@ -50,6 +51,7 @@ class InsurancePolicyController extends AbstractController
     private PromotionalCodeRepository $promotionalCodeRepository;
     private ValidatorInterface $validator;
     private EmailService $emailService;
+    private AppConfigRepository $appConfigRepository;
 
     public function __construct(
         InsurancePolicyRepository $insurancePolicyRepository,
@@ -67,7 +69,8 @@ class InsurancePolicyController extends AbstractController
         InsurancePolicyClauseRepository $insurancePolicyClauseRepository,
         PromotionalCodeRepository $promotionalCodeRepository,
         ValidatorInterface        $validator,
-        EmailService              $emailService
+        EmailService              $emailService,
+        AppConfigRepository $appConfigRepository
     ) {
         $this->insurancePolicyRepository = $insurancePolicyRepository;
         $this->settlementRepository = $settlementRepository;
@@ -85,6 +88,7 @@ class InsurancePolicyController extends AbstractController
         $this->promotionalCodeRepository = $promotionalCodeRepository;
         $this->validator = $validator;
         $this->emailService = $emailService;
+        $this->appConfigRepository = $appConfigRepository;
     }
 
     /**
@@ -377,6 +381,16 @@ class InsurancePolicyController extends AbstractController
         $insurancePolicy->setDiscount(isset($data['discount']) ? (float)$data['discount'] : 0);
         $insurancePolicy->setSubtotalTax(isset($data['subtotal_tax']) ? (float)$data['subtotal_tax'] : 0);
         $insurancePolicy->setTotal((float)($data['total'] ?? 0));
+
+        // Get tax percents
+        $taxPercentsConfig = $this->appConfigRepository->findOneBy(['name' => 'TAX_PERCENTS']);
+        $taxPercents = $taxPercentsConfig ? $taxPercentsConfig->getValue() : 0.0;
+        $insurancePolicy->setTaxPercents((float) $taxPercents);
+
+        // Get currency symbol
+        $currencyConfig = $this->appConfigRepository->findOneBy(['name' => 'CURRENCY']);
+        $currencySymbol = $currencyConfig ? $currencyConfig->getValue() : '';
+        $insurancePolicy->setCurrencySymbol($currencySymbol);
 
         // Set property additional info if it's provided
         if (isset($data['property_additional_info'])) {

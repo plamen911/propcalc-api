@@ -214,12 +214,10 @@ class EmailService
         $propertyChecklistItems = $policy->getInsurancePolicyPropertyChecklists();
 
         // Get currency symbol
-        $currencyConfig = $this->appConfigRepository->findOneBy(['name' => 'CURRENCY']);
-        $currencySymbol = $currencyConfig ? $currencyConfig->getValue() : '';
+        $currencySymbol = $policy->getCurrencySymbol();
 
         // Get tax percents
-        $taxPercentsConfig = $this->appConfigRepository->findOneBy(['name' => 'TAX_PERCENTS']);
-        $taxPercents = $taxPercentsConfig ? $taxPercentsConfig->getValue() : '';
+        $taxPercents = $policy->getTaxPercents();
 
         $stats = $this->statisticsService->calculate(
             insurancePremiumAmount: (float) $policy->getSubtotal(),

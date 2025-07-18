@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\WaterDistance;
+use App\Entity\AppConfig;
 
 #[ORM\Entity(repositoryClass: InsurancePolicyRepository::class)]
 #[ORM\Table(name: 'insurance_policies')]
@@ -111,6 +112,9 @@ class InsurancePolicy
     private ?float $discount = null;
 
     #[ORM\Column(type: 'float')]
+    private ?float $taxPercents = null;
+
+    #[ORM\Column(type: 'float')]
     private ?float $subtotalTax = null;
 
     #[ORM\Column(type: 'float')]
@@ -139,14 +143,17 @@ class InsurancePolicy
     #[ORM\Column(type: 'datetime')]
     private ?\DateTimeInterface $updatedAt = null;
 
-    #[ORM\OneToMany(mappedBy: 'insurancePolicy', targetEntity: InsurancePolicyClause::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: InsurancePolicyClause::class, mappedBy: 'insurancePolicy', cascade: ['persist', 'remove'])]
     private Collection $insurancePolicyClauses;
 
-    #[ORM\OneToMany(mappedBy: 'insurancePolicy', targetEntity: InsurancePolicyPropertyChecklist::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: InsurancePolicyPropertyChecklist::class, mappedBy: 'insurancePolicy', cascade: ['persist', 'remove'])]
     private Collection $insurancePolicyPropertyChecklists;
 
     #[ORM\Column(name: 'property_additional_info', type: 'string', nullable: true)]
     private ?string $propertyAdditionalInfo = null;
+
+    #[ORM\Column(name: 'currency_symbol', type: 'string', length: 191, nullable: true)]
+    private ?string $currencySymbol = null;
 
     public function __construct()
     {
@@ -239,6 +246,18 @@ class InsurancePolicy
     public function setDiscount(float $discount): static
     {
         $this->discount = $discount;
+
+        return $this;
+    }
+
+    public function getTaxPercents(): ?float
+    {
+        return $this->taxPercents;
+    }
+
+    public function setTaxPercents(float $taxPercents): static
+    {
+        $this->taxPercents = $taxPercents;
 
         return $this;
     }
@@ -669,6 +688,18 @@ class InsurancePolicy
     public function setPropertyOwnerPermanentAddress(?string $propertyOwnerPermanentAddress): self
     {
         $this->propertyOwnerPermanentAddress = $propertyOwnerPermanentAddress;
+
+        return $this;
+    }
+
+    public function getCurrencySymbol(): ?string
+    {
+        return $this->currencySymbol;
+    }
+
+    public function setCurrencySymbol(?string $currencySymbol): static
+    {
+        $this->currencySymbol = $currencySymbol;
 
         return $this;
     }
