@@ -549,6 +549,24 @@ class EmailService
                 <span class="label"><a href="tel:+35964803304">064 803304</a></span>
                 <span class="value">Офис</span>
             </div>
+            <div class="item">
+                <span class="label">
+                    <a href="mailto:'.\App\Constants\AppConstants::ADMIN_EMAIL.'">'.\App\Constants\AppConstants::ADMIN_EMAIL.'</a>
+                </span>
+                <span class="value">Имейл</span>
+            </div>
+            <div class="item">
+                <span class="label">
+                    <a href="https://www.facebook.com/profile.php?id=100069754213875" target="_blank">Застраховайте с Дайке</a>
+                </span>
+                <span class="value">Facebook</span>
+            </div>
+            <div class="item">
+                <span class="label">
+                    <a href="https://www.tiktok.com/@teodor.daike" target="_blank">Теодор Дайке</a>
+                </span>
+                <span class="value">TikTok</span>
+            </div>
         </div>';
 
         $content .= '</div>';
