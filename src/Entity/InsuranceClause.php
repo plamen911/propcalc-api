@@ -42,10 +42,19 @@ class InsuranceClause
     #[ORM\Column(type: 'integer')]
     private ?int $position = null;
 
-    #[ORM\OneToMany(mappedBy: 'insuranceClause', targetEntity: InsurancePolicyClause::class)]
+    #[ORM\Column(name: 'min_value', type: 'integer', nullable: true)]
+    private ?int $minValue = null;
+
+    #[ORM\Column(name: 'max_value', type: 'integer', nullable: true)]
+    private ?int $maxValue = null;
+
+    #[ORM\Column(name: 'step_value', type: 'integer', nullable: true)]
+    private ?int $stepValue = null;
+
+    #[ORM\OneToMany(targetEntity: InsurancePolicyClause::class, mappedBy: 'insuranceClause')]
     private Collection $insurancePolicyClauses;
 
-    #[ORM\OneToMany(mappedBy: 'insuranceClause', targetEntity: TariffPresetClause::class)]
+    #[ORM\OneToMany(targetEntity: TariffPresetClause::class, mappedBy: 'insuranceClause')]
     private Collection $tariffPresetClauses;
 
     public function __construct()
@@ -151,6 +160,42 @@ class InsuranceClause
     public function setPosition(int $position): static
     {
         $this->position = $position;
+
+        return $this;
+    }
+
+    public function getMinValue(): ?int
+    {
+        return $this->minValue;
+    }
+
+    public function setMinValue(?int $minValue): static
+    {
+        $this->minValue = $minValue;
+
+        return $this;
+    }
+
+    public function getMaxValue(): ?int
+    {
+        return $this->maxValue;
+    }
+
+    public function setMaxValue(?int $maxValue): static
+    {
+        $this->maxValue = $maxValue;
+
+        return $this;
+    }
+
+    public function getStepValue(): ?int
+    {
+        return $this->stepValue;
+    }
+
+    public function setStepValue(?int $stepValue): static
+    {
+        $this->stepValue = $stepValue;
 
         return $this;
     }

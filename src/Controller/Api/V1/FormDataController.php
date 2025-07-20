@@ -18,6 +18,8 @@ use App\Repository\PropertyChecklistRepository;
 use App\Repository\SettlementRepository;
 use App\Repository\NationalityRepository;
 use App\Repository\AppConfigRepository;
+use App\Repository\InsuranceClauseRepository;
+use App\Repository\InsurancePolicyClauseRepository;
 use App\Service\TariffPresetService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,11 +32,19 @@ class FormDataController extends AbstractController
 {
     private TariffPresetService $tariffPresetService;
     private AppConfigRepository $appConfigRepository;
+    private InsuranceClauseRepository $insuranceClauseRepository;
+    private InsurancePolicyClauseRepository $insurancePolicyClauseRepository;
 
-    public function __construct(TariffPresetService $tariffPresetService, AppConfigRepository $appConfigRepository)
-    {
+    public function __construct(
+        TariffPresetService $tariffPresetService,
+        AppConfigRepository $appConfigRepository,
+        InsuranceClauseRepository $insuranceClauseRepository,
+        InsurancePolicyClauseRepository $insurancePolicyClauseRepository
+    ) {
         $this->tariffPresetService = $tariffPresetService;
         $this->appConfigRepository = $appConfigRepository;
+        $this->insuranceClauseRepository = $insuranceClauseRepository;
+        $this->insurancePolicyClauseRepository = $insurancePolicyClauseRepository;
     }
     // Endpoint removed in favor of /api/v1/form-data/initial-data
 
@@ -215,6 +225,59 @@ class FormDataController extends AbstractController
             'name' => $config->getName(),
             'value' => $config->getValue()
         ]);
+    }
+
+    #[Route('/clause-config', name: 'api_v1_form_data_clause_config', methods: ['GET'])]
+    public function getClauseConfig(): JsonResponse
+    {
+        // Define the clause IDs to fetch
+        $clauseIds = [1, 2, 3, 7, 8, 9, 10, 11, 12, 13, 15];
+
+        // Prepare the response data
+        $result = [];
+
+        // Fetch values directly from insurance_clauses table
+        $clauses = $this->insuranceClauseRepository->findBy(['id' => $clauseIds]);
+        foreach ($clauses as $clause) {
+            $result[$clause->getId()] = [
+                'min' => $clause->getMinValue(),
+                'max' => $clause->getMaxValue(),
+                'step' => $clause->getStepValue(),
+            ];
+        }
+
+        // Add default values for any missing clauses
+        foreach ($clauseIds as $clauseId) {
+            if (!isset($result[$clauseId])) {
+                $result[$clauseId] = [
+                    'min' => $clauseId === 1 ? 100000 : 0,
+                    'max' => $clauseId === 1 ? 2000000 :
+                           ($clauseId === 2 ? 100000 :
+                           ($clauseId === 3 ? 15000 :
+                           ($clauseId === 7 ? 20000 :
+                           ($clauseId === 8 ? 50000 :
+                           ($clauseId === 9 ? 15000 :
+                           ($clauseId === 10 ? 50000 :
+                           ($clauseId === 11 ? 15000 :
+                           ($clauseId === 12 ? 2000000 :
+                           ($clauseId === 13 ? 50000 :
+                           ($clauseId === 15 ? 500 : 0)))))))))),
+                    'step' => $clauseId === 1 ? 10000 :
+                            ($clauseId === 2 ? 5000 :
+                            ($clauseId === 3 ? 1000 :
+                            ($clauseId === 7 ? 1000 :
+                            ($clauseId === 8 ? 1000 :
+                            ($clauseId === 9 ? 1000 :
+                            ($clauseId === 10 ? 1000 :
+                            ($clauseId === 11 ? 1000 :
+                            ($clauseId === 12 ? 10000 :
+                            ($clauseId === 13 ? 1000 :
+                            ($clauseId === 15 ? 50 : 10)))))))))),
+                ];
+            }
+        }
+
+        return $this->json($result);
     }
 
     #[Route('/initial-data', name: 'api_v1_form_data_initial_data', methods: ['GET'])]
