@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\V1;
 
-use App\Entity\EstateType;
-use App\Entity\WaterDistance;
-use App\Entity\PersonRole;
-use App\Entity\IdNumberType;
-use App\Entity\PropertyChecklist;
-use App\Entity\Nationality;
 use App\Repository\EstateTypeRepository;
 use App\Repository\WaterDistanceRepository;
 use App\Repository\PersonRoleRepository;
@@ -19,7 +13,6 @@ use App\Repository\SettlementRepository;
 use App\Repository\NationalityRepository;
 use App\Repository\AppConfigRepository;
 use App\Repository\InsuranceClauseRepository;
-use App\Repository\InsurancePolicyClauseRepository;
 use App\Service\TariffPresetService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -33,18 +26,15 @@ class FormDataController extends AbstractController
     private TariffPresetService $tariffPresetService;
     private AppConfigRepository $appConfigRepository;
     private InsuranceClauseRepository $insuranceClauseRepository;
-    private InsurancePolicyClauseRepository $insurancePolicyClauseRepository;
 
     public function __construct(
         TariffPresetService $tariffPresetService,
         AppConfigRepository $appConfigRepository,
-        InsuranceClauseRepository $insuranceClauseRepository,
-        InsurancePolicyClauseRepository $insurancePolicyClauseRepository
+        InsuranceClauseRepository $insuranceClauseRepository
     ) {
         $this->tariffPresetService = $tariffPresetService;
         $this->appConfigRepository = $appConfigRepository;
         $this->insuranceClauseRepository = $insuranceClauseRepository;
-        $this->insurancePolicyClauseRepository = $insurancePolicyClauseRepository;
     }
     // Endpoint removed in favor of /api/v1/form-data/initial-data
 
@@ -230,51 +220,15 @@ class FormDataController extends AbstractController
     #[Route('/clause-config', name: 'api_v1_form_data_clause_config', methods: ['GET'])]
     public function getClauseConfig(): JsonResponse
     {
-        // Define the clause IDs to fetch
-        $clauseIds = [1, 2, 3, 7, 8, 9, 10, 11, 12, 13, 15];
-
-        // Prepare the response data
         $result = [];
 
-        // Fetch values directly from insurance_clauses table
-        $clauses = $this->insuranceClauseRepository->findBy(['id' => $clauseIds]);
+        $clauses = $this->insuranceClauseRepository->findAllWithMinAndMaxValues();
         foreach ($clauses as $clause) {
             $result[$clause->getId()] = [
                 'min' => $clause->getMinValue(),
                 'max' => $clause->getMaxValue(),
                 'step' => $clause->getStepValue(),
             ];
-        }
-
-        // Add default values for any missing clauses
-        foreach ($clauseIds as $clauseId) {
-            if (!isset($result[$clauseId])) {
-                $result[$clauseId] = [
-                    'min' => $clauseId === 1 ? 100000 : 0,
-                    'max' => $clauseId === 1 ? 2000000 :
-                           ($clauseId === 2 ? 100000 :
-                           ($clauseId === 3 ? 15000 :
-                           ($clauseId === 7 ? 20000 :
-                           ($clauseId === 8 ? 50000 :
-                           ($clauseId === 9 ? 15000 :
-                           ($clauseId === 10 ? 50000 :
-                           ($clauseId === 11 ? 15000 :
-                           ($clauseId === 12 ? 2000000 :
-                           ($clauseId === 13 ? 50000 :
-                           ($clauseId === 15 ? 500 : 0)))))))))),
-                    'step' => $clauseId === 1 ? 10000 :
-                            ($clauseId === 2 ? 5000 :
-                            ($clauseId === 3 ? 1000 :
-                            ($clauseId === 7 ? 1000 :
-                            ($clauseId === 8 ? 1000 :
-                            ($clauseId === 9 ? 1000 :
-                            ($clauseId === 10 ? 1000 :
-                            ($clauseId === 11 ? 1000 :
-                            ($clauseId === 12 ? 10000 :
-                            ($clauseId === 13 ? 1000 :
-                            ($clauseId === 15 ? 50 : 10)))))))))),
-                ];
-            }
         }
 
         return $this->json($result);
