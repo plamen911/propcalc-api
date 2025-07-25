@@ -44,11 +44,24 @@ class TariffPresetController extends AbstractController
     public function listTariffPresets(Request $request): JsonResponse
     {
         // Get optional filter parameters from the request
-        $settlementId = $request->query->get('settlement_id') ? (int) $request->query->get('settlement_id') : null;
-        $distanceToWaterId = $request->query->get('distance_to_water_id') ? (int) $request->query->get('distance_to_water_id') : null;
+        $settlementId = $request->query->get('settlement_id') ? $request->query->getInt('settlement_id') : null;
+        $distanceToWaterId = $request->query->get('distance_to_water_id') ? $request->query->getInt('distance_to_water_id') : null;
+        $areaSqMeters = $request->query->get('area_sq_meters') ? $request->query->getInt('area_sq_meters') : 0;
 
         // Use the service to get the tariff presets
         $data = $this->tariffPresetService->getTariffPresets($settlementId, $distanceToWaterId);
+
+        if ($areaSqMeters > 0) {
+            $data = array_slice(
+                array_values(
+                    array_filter($data, function (array $item) use ($areaSqMeters) {
+                        return !empty($item['tariff_preset_clauses'])
+                            && is_array($item['tariff_preset_clauses'])
+                            && isset($item['tariff_preset_clauses'][0]['tariff_amount'])
+                            && ((int)$item['tariff_preset_clauses'][0]['tariff_amount']) >= $areaSqMeters * 1000;
+                    })
+                ), 0, 4);
+        }
 
         return $this->json($data);
     }
