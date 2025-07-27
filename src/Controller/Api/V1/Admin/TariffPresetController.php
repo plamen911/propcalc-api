@@ -60,7 +60,7 @@ class TariffPresetController extends AbstractController
                             && isset($item['tariff_preset_clauses'][0]['tariff_amount'])
                             && ((int)$item['tariff_preset_clauses'][0]['tariff_amount']) >= $areaSqMeters * 1000;
                     })
-                ), 0, 4);
+                ), 0, 5);
         }
 
         return $this->json($data);
