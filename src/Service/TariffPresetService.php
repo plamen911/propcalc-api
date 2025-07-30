@@ -133,12 +133,17 @@ class TariffPresetService
                     $lineTotal = 2.0;
                 }
 
+                if (! $insuranceClause->getHasTariffNumber()) {
+                    $lineTotal = $clause->getTariffAmount();
+                }
+
                 $presetData['tariff_preset_clauses'][] = [
                     'id' => $clause->getId(),
                     'insurance_clause' => [
                         'id' => $insuranceClauseId,
                         'name' => $insuranceClause->getName(),
                         'description' => $insuranceClause->getDescription(),
+                        'has_tariff_number' => $insuranceClause->getHasTariffNumber(),
                         'tariff_number' => $tariffNumber,
                         'allow_custom_amount' => $insuranceClause->getAllowCustomAmount(),
                         'position' => $clause->getPosition(),
