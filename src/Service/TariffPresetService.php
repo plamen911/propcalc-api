@@ -135,10 +135,6 @@ class TariffPresetService
                     $lineTotal = 2.0;
                 }
 
-//                if (! $insuranceClause->getHasTariffNumber()) {
-//                    $lineTotal = $clause->getTariffAmount();
-//                }
-
                 $presetData['tariff_preset_clauses'][] = [
                     'id' => $clause->getId(),
                     'insurance_clause' => [
