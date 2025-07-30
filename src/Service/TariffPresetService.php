@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\InsuranceClause;
+use App\Entity\TariffPresetClause;
 use App\Repository\TariffPresetRepository;
 use App\Repository\TariffPresetClauseRepository;
 use App\Repository\SettlementRepository;
@@ -133,9 +135,9 @@ class TariffPresetService
                     $lineTotal = 2.0;
                 }
 
-                if (! $insuranceClause->getHasTariffNumber()) {
-                    $lineTotal = $clause->getTariffAmount();
-                }
+//                if (! $insuranceClause->getHasTariffNumber()) {
+//                    $lineTotal = $clause->getTariffAmount();
+//                }
 
                 $presetData['tariff_preset_clauses'][] = [
                     'id' => $clause->getId(),
