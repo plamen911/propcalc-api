@@ -240,7 +240,8 @@ class FormDataController extends AbstractController
         WaterDistanceRepository $waterDistanceRepository,
         PersonRoleRepository $personRoleRepository,
         IdNumberTypeRepository $idNumberTypeRepository,
-        PropertyChecklistRepository $propertyChecklistRepository
+        PropertyChecklistRepository $propertyChecklistRepository,
+        InsuranceClauseRepository $insuranceClauseRepository,
     ): JsonResponse
     {
         // Get estate types
@@ -302,15 +303,25 @@ class FormDataController extends AbstractController
             ];
         }
 
+        $tariffAmountCoverages = $insuranceClauseRepository->getTariffAmountCoverages();
+        $tariffAmountCoveragesData = [];
+        foreach ($tariffAmountCoverages as $coverage) {
+            $tariffAmountCoveragesData[$coverage->getId()] = [
+                'tariff_amount' => $coverage->getTariffAmount(),
+                'tariff_amount_coverage' => $coverage->getTariffAmountCoverage()
+            ];
+        }
+
         // Return all data in a single response
         return $this->json([
-            'estate_types' => $estateTypesData,
-            'water_distances' => $waterDistancesData,
             'currency_symbol' => $currencySymbol,
-            'person_role_options' => $personRoleData,
-            'id_number_type_options' => $idNumberTypeData,
-            'property_checklist_items' => $propertyChecklistData,
             'document_links' => self::getDocumentLinks(),
+            'estate_types' => $estateTypesData,
+            'id_number_type_options' => $idNumberTypeData,
+            'person_role_options' => $personRoleData,
+            'property_checklist_items' => $propertyChecklistData,
+            'tariff_amount_coverages' => $tariffAmountCoveragesData,
+            'water_distances' => $waterDistancesData,
         ]);
     }
 

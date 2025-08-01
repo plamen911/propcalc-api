@@ -51,6 +51,17 @@ class InsuranceClauseRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('ic')
             ->where('ic.minValue IS NOT NULL')
             ->andWhere('ic.maxValue IS NOT NULL')
+            ->andWhere('ic.active = 1')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return InsuranceClause[] */
+    public function getTariffAmountCoverages(): array
+    {
+        return $this->createQueryBuilder('ic')
+            ->where('ic.tariffAmountCoverage IS NOT NULL')
+            ->andWhere('ic.active = 1')
             ->getQuery()
             ->getResult();
     }

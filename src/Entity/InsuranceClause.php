@@ -30,6 +30,9 @@ class InsuranceClause
     #[ORM\Column(name: 'tariff_amount', type: 'float')]
     private ?float $tariffAmount = null;
 
+    #[ORM\Column(name: 'tariff_amount_coverage', type: 'float')]
+    private ?float $tariffAmountCoverage = null;
+
     #[ORM\Column(name: 'allow_custom_amount', type: 'boolean')]
     private bool $allowCustomAmount = false;
 
@@ -112,6 +115,18 @@ class InsuranceClause
     public function setTariffAmount(float $tariffAmount): static
     {
         $this->tariffAmount = $tariffAmount;
+
+        return $this;
+    }
+
+    public function getTariffAmountCoverage(): ?float
+    {
+        return $this->tariffAmountCoverage;
+    }
+
+    public function setTariffAmountCoverage(float $tariffAmountCoverage): static
+    {
+        $this->tariffAmountCoverage = $tariffAmountCoverage;
 
         return $this;
     }
