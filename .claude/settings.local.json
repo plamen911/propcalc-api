@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(openssl rsa:*)",
+      "Bash(chmod:*)",
+      "Bash(php bin/console cache:clear:*)"
+    ]
+  }
+}
