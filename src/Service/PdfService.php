@@ -111,7 +111,7 @@ class PdfService
                 /* Base styles */
                 body {
                     font-family: "DejaVu Sans", "Arial Unicode MS", Arial, sans-serif;
-                    line-height: 1.6;
+                    line-height: 1.3;
                     color: #333;
                     margin: 0;
                     padding: 0;
@@ -124,7 +124,7 @@ class PdfService
                     width: 100%;
                     max-width: 700px;
                     margin: 0 auto;
-                    padding: 10px;
+                    padding: 5px;
                     box-sizing: border-box;
                     overflow-x: hidden;
                 }
@@ -133,30 +133,30 @@ class PdfService
                 .header {
                     background-color: #8b2131;
                     color: white;
-                    padding: 10px;
+                    padding: 6px;
                     text-align: center;
                     border-radius: 5px 5px 0 0;
-                    margin-bottom: 15px;
+                    margin-bottom: 8px;
                     width: 100%;
                     box-sizing: border-box;
                     overflow-x: hidden;
                 }
                 .header h1 {
-                    margin: 0 0 5px 0;
-                    font-size: 20px;
+                    margin: 0 0 2px 0;
+                    font-size: 16px;
                     letter-spacing: 0.5px;
                 }
                 .header p {
                     margin: 0;
-                    font-size: 12px;
+                    font-size: 10px;
                     opacity: 0.9;
                 }
 
                 /* Section styles - optimized for printing */
                 .section {
-                    margin-bottom: 15px;
+                    margin-bottom: 8px;
                     border: 1px solid #cccccc;
-                    padding: 10px;
+                    padding: 6px;
                     width: 100%;
                     box-sizing: border-box;
                     border-radius: 5px;
@@ -164,15 +164,15 @@ class PdfService
                     overflow-x: hidden;
                 }
                 .section-title {
-                    font-size: 16px;
+                    font-size: 13px;
                     font-weight: bold;
-                    margin-bottom: 10px;
+                    margin-bottom: 5px;
                     color: #8b2131;
-                    padding-bottom: 5px;
+                    padding-bottom: 3px;
                     border-bottom: 1px solid #dddddd;
                 }
                 .item {
-                    margin-bottom: 10px;
+                    margin-bottom: 4px;
                     width: 100%;
                     box-sizing: border-box;
                     overflow-x: hidden;
@@ -190,7 +190,7 @@ class PdfService
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 8px;
+                    margin-bottom: 4px;
                     box-sizing: border-box;
                     table-layout: fixed;
                 }
@@ -198,11 +198,11 @@ class PdfService
                     border: 1px solid #aaaaaa;
                 }
                 th, td {
-                    padding: 5px 6px;
+                    padding: 3px 4px;
                     text-align: left;
                     word-wrap: break-word;
                     overflow-wrap: break-word;
-                    font-size: 11px;
+                    font-size: 10px;
                 }
                 th {
                     background-color: #f0f0f0;
@@ -217,20 +217,20 @@ class PdfService
                 }
                 tfoot th {
                     font-weight: bold;
-                    font-size: 12px;
+                    font-size: 11px;
                 }
 
                 /* Footer styles - optimized for printing */
                 .footer {
                     text-align: center;
-                    margin-top: 20px;
-                    padding-top: 10px;
-                    font-size: 10px;
+                    margin-top: 10px;
+                    padding-top: 5px;
+                    font-size: 9px;
                     color: #555;
                     border-top: 1px solid #cccccc;
                 }
                 .footer p {
-                    margin: 3px 0;
+                    margin: 1px 0;
                 }
 
                 /* Utility classes */
