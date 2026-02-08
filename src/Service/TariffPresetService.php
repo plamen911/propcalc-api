@@ -130,10 +130,10 @@ class TariffPresetService
                     ? $clause->getTariffAmount() * $tariffNumber / 100.0
                     : $insuranceClause->getTariffAmount();
 
-                // For insurance_clause_id = 13, ensure line_total is at least 2.0
+                // For insurance_clause_id = 13, ensure line_total is at least 1.02
                 // 13 - Щети вследствие на опит за кражба чрез взлом или грабеж
-                if ($insuranceClause->getHasTariffNumber() && $insuranceClauseId === 13 && $lineTotal < 2.0) {
-                    $lineTotal = 2.0;
+                if ($insuranceClause->getHasTariffNumber() && $insuranceClauseId === 13 && $lineTotal < 1.02) {
+                    $lineTotal = 1.02;
                 }
 
                 $presetData['tariff_preset_clauses'][] = [
@@ -156,8 +156,9 @@ class TariffPresetService
             $totalPremium = 0;
             $totalPremiumDetails = [];
             foreach ($presetData['tariff_preset_clauses'] as $clause) {
-                $totalPremium += (float) str_replace(',', '', $clause['line_total']);
-                $totalPremiumDetails[] = (float) str_replace(',', '', $clause['line_total']);
+                $amt = (float) str_replace(',', '', $clause['line_total']);
+                $totalPremium += $amt;
+                $totalPremiumDetails[] = $amt;
             }
 
             // Calculate discounted premium
@@ -175,7 +176,7 @@ class TariffPresetService
                 'discounted_premium' => number_format($discountedPremium, 2, '.', ''),
                 'tax_amount' => number_format($taxAmount, 2, '.', ''),
                 'total_amount' => number_format($totalAmount, 2, '.', ''),
-                'total_premium_details' => join(' + ', $totalPremiumDetails) . ' = ' . $totalPremium
+                //'total_premium_details' => join(' + ', $totalPremiumDetails) . ' = ' . $totalPremium
             ];
 
             $data[] = $presetData;
