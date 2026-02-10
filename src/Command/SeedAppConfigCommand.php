@@ -25,7 +25,7 @@ class SeedAppConfigCommand extends Command
         [
             "id" => 1,
             "name" => "CURRENCY",
-            "value" => "лв.",
+            "value" => "€",
             "name_bg" => "Валута",
             "is_editable" => true,
             "position" => 1
@@ -69,6 +69,14 @@ class SeedAppConfigCommand extends Command
             "name_bg" => "Данък върху застрахователната премия, %",
             "is_editable" => true,
             "position" => 6
+        ],
+        [
+            "id" => 7,
+            "name" => "THEFT_DAMAGE_CLAUSE_ID",
+            "value" => "13",
+            "name_bg" => "Клауза щети от опит за кражба",
+            "is_editable" => false,
+            "position" => 7
         ],
     ];
 

@@ -111,8 +111,8 @@ class AppConfigController extends AbstractController
 
         switch ($appConfig->getName()) {
             case 'CURRENCY':
-                if (!in_array($value, ['лв.', '€'])) {
-                    throw new \InvalidArgumentException('Currency must be either лв. or €');
+                if ($value !== '€') {
+                    throw new \InvalidArgumentException('Currency must be €');
                 }
                 break;
             case 'DISCOUNT_PERCENTS':
@@ -122,6 +122,7 @@ class AppConfigController extends AbstractController
                     throw new \InvalidArgumentException('Percentage must be between 0 and 100');
                 }
                 break;
+            case 'THEFT_DAMAGE_CLAUSE_ID':
             case 'EARTHQUAKE_ID':
             case 'FLOOD_LT_500_M_ID':
             case 'FLOOD_GT_500_M_ID':

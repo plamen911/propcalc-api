@@ -80,8 +80,7 @@ class TariffPresetService
                     ? $clause->getTariffAmount() * $tariffNumber / 100.0
                     : $insuranceClause->getTariffAmount();
 
-                // For insurance_clause_id = 13, ensure line_total is at least 1.02
-                if ($insuranceClause->getHasTariffNumber() && $insuranceClauseId === 13 && $lineTotal < 1.02) {
+                if ($insuranceClause->getHasTariffNumber() && $zoneConfig['theftDamageClauseId'] !== null && $insuranceClauseId === $zoneConfig['theftDamageClauseId'] && $lineTotal < 1.02) {
                     $lineTotal = 1.02;
                 }
 
@@ -158,6 +157,10 @@ class TariffPresetService
                 ? $customAmount * $tariffNumber / 100.0
                 : $insuranceClause->getTariffAmount();
 
+            if ($insuranceClause->getHasTariffNumber() && $zoneConfig['theftDamageClauseId'] !== null && $insuranceClauseId === $zoneConfig['theftDamageClauseId'] && $lineTotal < 1.02) {
+                $lineTotal = 1.02;
+            }
+
             $totalPremium += $lineTotal;
         }
 
@@ -174,7 +177,7 @@ class TariffPresetService
 
     private function resolveZoneConfig(?int $settlementId, ?int $distanceToWaterId): array
     {
-        $configNames = ['EARTHQUAKE_ID', 'DISCOUNT_PERCENTS', 'TAX_PERCENTS'];
+        $configNames = ['EARTHQUAKE_ID', 'DISCOUNT_PERCENTS', 'TAX_PERCENTS', 'THEFT_DAMAGE_CLAUSE_ID'];
         if ($distanceToWaterId !== null) {
             $configNames[] = 'FLOOD_LT_500_M_ID';
             $configNames[] = 'FLOOD_GT_500_M_ID';
@@ -210,12 +213,17 @@ class TariffPresetService
             ? (float) $appConfigs['TAX_PERCENTS']->getValue()
             : 0;
 
+        $theftDamageClauseId = isset($appConfigs['THEFT_DAMAGE_CLAUSE_ID'])
+            ? (int) $appConfigs['THEFT_DAMAGE_CLAUSE_ID']->getValue()
+            : null;
+
         return [
             'earthquakeId' => $earthquakeId,
             'earthquakeTariffNumber' => $earthquakeTariffNumber,
             'floodZoneIdToSkip' => $floodZoneIdToSkip,
             'discountPercent' => $discountPercent,
             'taxPercent' => $taxPercent,
+            'theftDamageClauseId' => $theftDamageClauseId,
         ];
     }
 

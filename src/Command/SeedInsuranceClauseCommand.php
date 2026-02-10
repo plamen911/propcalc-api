@@ -34,7 +34,7 @@ class SeedInsuranceClauseCommand extends Command
         ],
         [
             "id" => 3,
-            "name" => "Пожари и щети на имущество - Соларни инсталации до 15000 лв.",
+            "name" => "Пожари и щети на имущество - Соларни инсталации до 8000 €",
             "tariff_number" => 1.2,
             "position" => 3
         ],
