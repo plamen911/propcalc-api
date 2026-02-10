@@ -132,4 +132,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         return trim($this->firstName . ' ' . $this->lastName);
     }
+
+    public function toArray(bool $includeId = true): array
+    {
+        $data = [
+            'email' => $this->email,
+            'firstName' => $this->firstName,
+            'lastName' => $this->lastName,
+            'fullName' => $this->getFullName(),
+            'roles' => $this->getRoles(),
+        ];
+
+        if ($includeId) {
+            $data = ['id' => $this->id] + $data;
+        }
+
+        return $data;
+    }
 }

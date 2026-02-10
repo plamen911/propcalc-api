@@ -13,9 +13,6 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-/**
- * Controller for user management by admin
- */
 #[Route('/api/v1/admin/user-management', name: 'api_v1_admin_user_management_')]
 #[IsGranted('ROLE_ADMIN')]
 class UserManagementController extends AbstractController
@@ -41,9 +38,6 @@ class UserManagementController extends AbstractController
         $this->promotionalCodeRepository = $promotionalCodeRepository;
     }
 
-    /**
-     * Get a single user by ID
-     */
     #[Route('/{id}', name: 'get_user', methods: ['GET'])]
     public function getUserById(int $id): JsonResponse
     {
@@ -53,19 +47,9 @@ class UserManagementController extends AbstractController
             return $this->json(['message' => 'Потребителят не е намерен'], Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json([
-            'id' => $user->getId(),
-            'email' => $user->getEmail(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
-            'fullName' => $user->getFullName(),
-            'roles' => $user->getRoles(),
-        ]);
+        return $this->json($user->toArray());
     }
 
-    /**
-     * Create a new user
-     */
     #[Route('', name: 'create_user', methods: ['POST'])]
     public function createUser(Request $request): JsonResponse
     {
@@ -90,11 +74,9 @@ class UserManagementController extends AbstractController
         $user = new User();
         $user->setEmail($data['email']);
 
-        // Set password
         $hashedPassword = $this->passwordHasher->hashPassword($user, $data['password']);
         $user->setPassword($hashedPassword);
 
-        // Set name if provided
         if (isset($data['firstName'])) {
             $user->setFirstName($data['firstName']);
         }
@@ -103,34 +85,21 @@ class UserManagementController extends AbstractController
             $user->setLastName($data['lastName']);
         }
 
-        // Set roles if provided and valid
         if (isset($data['roles']) && is_array($data['roles'])) {
             $roles = $this->validateAndFilterRoles($data['roles']);
             $user->setRoles($roles);
         } else {
-            // Default role
             $user->setRoles(['ROLE_AGENT']);
         }
 
-        // Save user
         $this->userRepository->save($user, true);
 
         return $this->json([
             'message' => 'Потребителят е създаден успешно',
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'firstName' => $user->getFirstName(),
-                'lastName' => $user->getLastName(),
-                'fullName' => $user->getFullName(),
-                'roles' => $user->getRoles(),
-            ],
+            'user' => $user->toArray(),
         ], Response::HTTP_CREATED);
     }
 
-    /**
-     * Update an existing user
-     */
     #[Route('/{id}', name: 'update_user', methods: ['PUT'])]
     public function updateUser(int $id, Request $request): JsonResponse
     {
@@ -141,32 +110,8 @@ class UserManagementController extends AbstractController
             return $this->json(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
 
-        // Update email if provided
-        if (isset($data['email'])) {
-            // Check if email is already taken by another user
-            $existingUser = $this->userRepository->findOneBy(['email' => $data['email']]);
-            if ($existingUser && $existingUser->getId() !== $user->getId()) {
-                return $this->json([
-                    'message' => 'Имейлът вече е зает',
-                ], Response::HTTP_BAD_REQUEST);
-            }
-
-            $user->setEmail($data['email']);
-        }
-
-        // Update password if provided
-        if (isset($data['password']) && !empty($data['password'])) {
-            $hashedPassword = $this->passwordHasher->hashPassword($user, $data['password']);
-            $user->setPassword($hashedPassword);
-        }
-
-        // Update name if provided
-        if (isset($data['firstName'])) {
-            $user->setFirstName($data['firstName']);
-        }
-
-        if (isset($data['lastName'])) {
-            $user->setLastName($data['lastName']);
+        if ($errorResponse = $this->updateUserFields($user, $data)) {
+            return $errorResponse;
         }
 
         // Update roles if provided and valid
@@ -175,25 +120,14 @@ class UserManagementController extends AbstractController
             $user->setRoles($roles);
         }
 
-        // Save changes
         $this->userRepository->save($user, true);
 
         return $this->json([
             'message' => 'Потребителят е обновен успешно',
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'firstName' => $user->getFirstName(),
-                'lastName' => $user->getLastName(),
-                'fullName' => $user->getFullName(),
-                'roles' => $user->getRoles(),
-            ],
+            'user' => $user->toArray(),
         ]);
     }
 
-    /**
-     * Delete a user
-     */
     #[Route('/{id}', name: 'delete_user', methods: ['DELETE'])]
     public function deleteUser(int $id): JsonResponse
     {
@@ -216,15 +150,39 @@ class UserManagementController extends AbstractController
             $this->promotionalCodeRepository->remove($promotionalCode, false);
         }
 
-        // Delete the user
         $this->userRepository->remove($user, true);
 
         return $this->json(['message' => 'Потребителят е изтрит успешно']);
     }
 
-    /**
-     * Validate and filter roles to ensure only allowed roles are assigned
-     */
+    private function updateUserFields(User $user, array $data): ?JsonResponse
+    {
+        if (isset($data['email'])) {
+            $existingUser = $this->userRepository->findOneBy(['email' => $data['email']]);
+            if ($existingUser && $existingUser->getId() !== $user->getId()) {
+                return $this->json([
+                    'message' => 'Имейлът вече е зает',
+                ], Response::HTTP_BAD_REQUEST);
+            }
+            $user->setEmail($data['email']);
+        }
+
+        if (isset($data['password']) && !empty($data['password'])) {
+            $hashedPassword = $this->passwordHasher->hashPassword($user, $data['password']);
+            $user->setPassword($hashedPassword);
+        }
+
+        if (isset($data['firstName'])) {
+            $user->setFirstName($data['firstName']);
+        }
+
+        if (isset($data['lastName'])) {
+            $user->setLastName($data['lastName']);
+        }
+
+        return null;
+    }
+
     private function validateAndFilterRoles(array $roles): array
     {
         return array_filter($roles, function($role) {

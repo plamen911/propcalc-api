@@ -24,24 +24,6 @@ class SettlementRepository extends ServiceEntityRepository
         parent::__construct($registry, Settlement::class);
     }
 
-    public function save(Settlement $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(Settlement $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
     /**
      * Find settlements by name or postal code for autocomplete
      *

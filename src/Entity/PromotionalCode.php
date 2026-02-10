@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Entity\User;
 use App\Repository\PromotionalCodeRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -195,5 +194,31 @@ class PromotionalCode
         $this->user = $user;
 
         return $this;
+    }
+
+    public function toArray(): array
+    {
+        $userData = null;
+        if ($this->user) {
+            $userData = [
+                'id' => $this->user->getId(),
+                'email' => $this->user->getEmail(),
+                'fullName' => $this->user->getFullName(),
+            ];
+        }
+
+        return [
+            'id' => $this->id,
+            'code' => $this->code,
+            'description' => $this->description,
+            'discountPercentage' => $this->discountPercentage,
+            'validFrom' => $this->validFrom?->format('Y-m-d H:i:s'),
+            'validTo' => $this->validTo?->format('Y-m-d H:i:s'),
+            'active' => $this->active,
+            'usageLimit' => $this->usageLimit,
+            'usageCount' => $this->usageCount,
+            'isValid' => $this->isValid(),
+            'user' => $userData,
+        ];
     }
 }

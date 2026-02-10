@@ -33,7 +33,7 @@ class SettlementController extends AbstractController
             $result[] = [
                 'id' => $settlement->getId(),
                 'name' => $settlement->getFullName(),
-                'postCode' => $settlement->getPostCode(),
+                'post_code' => $settlement->getPostCode(),
             ];
         }
 

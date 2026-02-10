@@ -22,22 +22,4 @@ class NationalityRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Nationality::class);
     }
-
-    public function save(Nationality $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(Nationality $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
 }

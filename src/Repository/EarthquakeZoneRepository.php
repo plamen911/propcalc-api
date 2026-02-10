@@ -20,22 +20,4 @@ class EarthquakeZoneRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, EarthquakeZone::class);
     }
-
-    public function save(EarthquakeZone $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(EarthquakeZone $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
 }

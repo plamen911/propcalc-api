@@ -30,15 +30,6 @@ class InsurancePolicyRepository extends ServiceEntityRepository
         }
     }
 
-    public function remove(InsurancePolicy $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
     /**
      * Count insurance policies created on a specific date
      *

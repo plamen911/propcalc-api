@@ -22,22 +22,4 @@ class PersonRoleRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, PersonRole::class);
     }
-
-    public function save(PersonRole $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(PersonRole $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
 }

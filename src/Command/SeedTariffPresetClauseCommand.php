@@ -2,11 +2,6 @@
 
 namespace App\Command;
 
-use App\Entity\TariffPresetClause;
-use App\Entity\TariffPreset;
-use App\Entity\InsuranceClause;
-use App\Repository\TariffPresetRepository;
-use App\Repository\InsuranceClauseRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,8 +16,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class SeedTariffPresetClauseCommand extends Command
 {
     private EntityManagerInterface $entityManager;
-    private TariffPresetRepository $tariffPresetRepository;
-    private InsuranceClauseRepository $insuranceClauseRepository;
 
     // JSON data from the issue description
     private const TARIFF_PRESET_CLAUSES_DATA = [
@@ -211,14 +204,10 @@ class SeedTariffPresetClauseCommand extends Command
     ];
 
     public function __construct(
-        EntityManagerInterface $entityManager,
-        TariffPresetRepository $tariffPresetRepository,
-        InsuranceClauseRepository $insuranceClauseRepository
+        EntityManagerInterface $entityManager
     ) {
         parent::__construct();
         $this->entityManager = $entityManager;
-        $this->tariffPresetRepository = $tariffPresetRepository;
-        $this->insuranceClauseRepository = $insuranceClauseRepository;
     }
 
     protected function configure(): void

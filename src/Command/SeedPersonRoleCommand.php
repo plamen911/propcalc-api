@@ -2,7 +2,6 @@
 
 namespace App\Command;
 
-use App\Entity\PersonRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

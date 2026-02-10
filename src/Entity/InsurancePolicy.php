@@ -6,8 +6,6 @@ use App\Repository\InsurancePolicyRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use App\Entity\WaterDistance;
-use App\Entity\AppConfig;
 
 #[ORM\Entity(repositoryClass: InsurancePolicyRepository::class)]
 #[ORM\Table(name: 'insurance_policies')]

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\V1\Admin;
 
+use App\Controller\Trait\ValidatesEntities;
 use App\Entity\TariffPreset;
 use App\Entity\TariffPresetClause;
 use App\Repository\InsuranceClauseRepository;
@@ -20,6 +21,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 #[Route('/api/v1/insurance-policies/admin', name: 'api_v1_insurance_policies_admin_')]
 class TariffPresetController extends AbstractController
 {
+    use ValidatesEntities;
+
     private InsuranceClauseRepository $insuranceClauseRepository;
     private TariffPresetRepository $tariffPresetRepository;
     private TariffPresetClauseRepository $tariffPresetClauseRepository;
@@ -43,12 +46,10 @@ class TariffPresetController extends AbstractController
     #[Route('/tariff-presets', name: 'tariff_presets_list', methods: ['GET'])]
     public function listTariffPresets(Request $request): JsonResponse
     {
-        // Get optional filter parameters from the request
         $settlementId = $request->query->get('settlement_id') ? $request->query->getInt('settlement_id') : null;
         $distanceToWaterId = $request->query->get('distance_to_water_id') ? $request->query->getInt('distance_to_water_id') : null;
         $areaSqMeters = $request->query->get('area_sq_meters') ? $request->query->getInt('area_sq_meters') : 0;
 
-        // Use the service to get the tariff presets
         $data = $this->tariffPresetService->getTariffPresets($settlementId, $distanceToWaterId);
 
         if ($areaSqMeters > 0) {
@@ -71,7 +72,6 @@ class TariffPresetController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        // Create a new tariff preset
         $tariffPreset = new TariffPreset();
 
         if (isset($data['name'])) {
@@ -81,10 +81,9 @@ class TariffPresetController extends AbstractController
         if (isset($data['active'])) {
             $tariffPreset->setActive($data['active']);
         } else {
-            $tariffPreset->setActive(true); // Default to active
+            $tariffPreset->setActive(true);
         }
 
-        // Set position to the end of the list
         $lastPosition = 0;
         $lastPreset = $this->tariffPresetRepository->findOneBy([], ['position' => 'DESC']);
         if ($lastPreset) {
@@ -92,15 +91,8 @@ class TariffPresetController extends AbstractController
         }
         $tariffPreset->setPosition($lastPosition + 1);
 
-        $errors = $this->validator->validate($tariffPreset);
-
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
-            }
-
-            return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        if ($errorResponse = $this->validationErrors($this->validator->validate($tariffPreset))) {
+            return $errorResponse;
         }
 
         $this->tariffPresetRepository->save($tariffPreset, true);
@@ -131,31 +123,7 @@ class TariffPresetController extends AbstractController
             }
         }
 
-        // Get created tariff preset with clauses (only active insurance clauses)
-        $tariffPresetClauses = $this->tariffPresetClauseRepository->findByTariffPresetWithActiveInsuranceClauses(
-            $tariffPreset
-        );
-
-        $responseData = [
-            'id' => $tariffPreset->getId(),
-            'name' => $tariffPreset->getName(),
-            'active' => $tariffPreset->isActive(),
-            'position' => $tariffPreset->getPosition(),
-            'tariff_preset_clauses' => [],
-        ];
-
-        foreach ($tariffPresetClauses as $clause) {
-            $responseData['tariff_preset_clauses'][] = [
-                'id' => $clause->getId(),
-                'insurance_clause' => [
-                    'id' => $clause->getInsuranceClause()->getId(),
-                    'name' => $clause->getInsuranceClause()->getName(),
-                ],
-                'tariff_amount' => number_format($clause->getTariffAmount(), 2, '.', ''),
-            ];
-        }
-
-        return $this->json($responseData, Response::HTTP_CREATED);
+        return $this->json($this->buildTariffPresetResponse($tariffPreset), Response::HTTP_CREATED);
     }
 
     #[Route('/tariff-presets/{id}', name: 'tariff_presets_update', methods: ['PUT'])]
@@ -181,15 +149,8 @@ class TariffPresetController extends AbstractController
             $tariffPreset->setPosition($data['position']);
         }
 
-        $errors = $this->validator->validate($tariffPreset);
-
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
-            }
-
-            return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        if ($errorResponse = $this->validationErrors($this->validator->validate($tariffPreset))) {
+            return $errorResponse;
         }
 
         $this->tariffPresetRepository->save($tariffPreset, true);
@@ -198,7 +159,6 @@ class TariffPresetController extends AbstractController
         if (isset($data['tariff_preset_clauses']) && is_array($data['tariff_preset_clauses'])) {
             foreach ($data['tariff_preset_clauses'] as $clauseData) {
                 if (isset($clauseData['id'])) {
-                    // Update existing clause
                     $clause = $this->tariffPresetClauseRepository->find($clauseData['id']);
                     if ($clause && $clause->getTariffPreset()->getId() === $tariffPreset->getId()) {
                         if (isset($clauseData['tariff_amount'])) {
@@ -210,31 +170,7 @@ class TariffPresetController extends AbstractController
             }
         }
 
-        // Get updated tariff preset with clauses (only active insurance clauses)
-        $tariffPresetClauses = $this->tariffPresetClauseRepository->findByTariffPresetWithActiveInsuranceClauses(
-            $tariffPreset
-        );
-
-        $responseData = [
-            'id' => $tariffPreset->getId(),
-            'name' => $tariffPreset->getName(),
-            'active' => $tariffPreset->isActive(),
-            'position' => $tariffPreset->getPosition(),
-            'tariff_preset_clauses' => [],
-        ];
-
-        foreach ($tariffPresetClauses as $clause) {
-            $responseData['tariff_preset_clauses'][] = [
-                'id' => $clause->getId(),
-                'insurance_clause' => [
-                    'id' => $clause->getInsuranceClause()->getId(),
-                    'name' => $clause->getInsuranceClause()->getName(),
-                ],
-                'tariff_amount' => number_format($clause->getTariffAmount(), 2, '.', ''),
-            ];
-        }
-
-        return $this->json($responseData);
+        return $this->json($this->buildTariffPresetResponse($tariffPreset));
     }
 
     #[Route('/tariff-presets/{id}', name: 'tariff_presets_delete', methods: ['DELETE'])]
@@ -246,13 +182,11 @@ class TariffPresetController extends AbstractController
             return $this->json(['error' => 'Tariff preset not found'], Response::HTTP_NOT_FOUND);
         }
 
-        // Delete associated tariff preset clauses
         $tariffPresetClauses = $this->tariffPresetClauseRepository->findBy(['tariffPreset' => $tariffPreset]);
         foreach ($tariffPresetClauses as $clause) {
             $this->tariffPresetClauseRepository->remove($clause, true);
         }
 
-        // Delete the tariff preset
         $this->tariffPresetRepository->remove($tariffPreset, true);
 
         return $this->json(['success' => true]);
@@ -282,7 +216,6 @@ class TariffPresetController extends AbstractController
 
         return $this->json($data);
     }
-
 
     #[Route('/tariff-preset-clauses/{id}', name: 'tariff_preset_clauses_update', methods: ['PUT'])]
     public function updateTariffPresetClause(Request $request, int $id): JsonResponse
@@ -319,15 +252,8 @@ class TariffPresetController extends AbstractController
             $tariffPresetClause->setPosition($data['position']);
         }
 
-        $errors = $this->validator->validate($tariffPresetClause);
-
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
-            }
-
-            return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        if ($errorResponse = $this->validationErrors($this->validator->validate($tariffPresetClause))) {
+            return $errorResponse;
         }
 
         $this->tariffPresetClauseRepository->save($tariffPresetClause, true);
@@ -345,5 +271,33 @@ class TariffPresetController extends AbstractController
             'tariff_amount' => number_format($tariffPresetClause->getTariffAmount(), 2, '.', ''),
             'position' => $tariffPresetClause->getPosition(),
         ]);
+    }
+
+    private function buildTariffPresetResponse(TariffPreset $tariffPreset): array
+    {
+        $tariffPresetClauses = $this->tariffPresetClauseRepository->findByTariffPresetWithActiveInsuranceClauses(
+            $tariffPreset
+        );
+
+        $responseData = [
+            'id' => $tariffPreset->getId(),
+            'name' => $tariffPreset->getName(),
+            'active' => $tariffPreset->isActive(),
+            'position' => $tariffPreset->getPosition(),
+            'tariff_preset_clauses' => [],
+        ];
+
+        foreach ($tariffPresetClauses as $clause) {
+            $responseData['tariff_preset_clauses'][] = [
+                'id' => $clause->getId(),
+                'insurance_clause' => [
+                    'id' => $clause->getInsuranceClause()->getId(),
+                    'name' => $clause->getInsuranceClause()->getName(),
+                ],
+                'tariff_amount' => number_format($clause->getTariffAmount(), 2, '.', ''),
+            ];
+        }
+
+        return $responseData;
     }
 }

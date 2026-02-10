@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\V1;
 
-use App\Entity\PromotionalCode;
 use App\Repository\PromotionalCodeRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;

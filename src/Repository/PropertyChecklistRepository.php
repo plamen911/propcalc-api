@@ -22,22 +22,4 @@ class PropertyChecklistRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, PropertyChecklist::class);
     }
-
-    public function save(PropertyChecklist $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(PropertyChecklist $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
 }

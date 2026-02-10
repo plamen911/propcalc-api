@@ -23,12 +23,10 @@ use App\Repository\InsuranceClauseRepository;
 use App\Repository\InsurancePolicyClauseRepository;
 use App\Repository\PromotionalCodeRepository;
 use App\Service\EmailService;
-use Doctrine\ORM\Exception\ORMException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -91,10 +89,6 @@ class InsurancePolicyController extends AbstractController
         $this->appConfigRepository = $appConfigRepository;
     }
 
-    /**
-     * @throws TransportExceptionInterface
-     * @throws ORMException
-     */
     #[Route('', name: 'create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {

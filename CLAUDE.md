@@ -66,11 +66,18 @@ php bin/console cache:clear
 - **TariffPreset**: Predefined tariff packages containing multiple clauses
 - **TariffPresetClause**: Junction table linking presets to clauses with amounts
 - **Settlement**: Geographic locations with earthquake zone associations
+- ~20 entities total, ~20 repositories
 
 ### Key Services
 - **TariffPresetService** (`src/Service/TariffPresetService.php`): Calculates insurance premiums with earthquake zone adjustments, flood zone filtering, discounts, and taxes
-- **EmailService**: Sends order confirmation emails
-- **PdfService**: Generates policy PDF documents
+- **StatisticsService** (`src/Service/StatisticsService.php`): Computes policy statistics (premium amounts, discounts, tax, totals)
+- **EmailService** (`src/Service/EmailService.php`): Sends order confirmation emails
+- **PdfService** (`src/Service/PdfService.php`): Generates policy PDF documents
+
+### Other Key Files
+- `src/Controller/Trait/ValidatesEntities.php` — shared validation error formatting trait
+- `src/EventListener/CorsListener.php` — CORS handling for all API responses
+- `src/Constants/AppConstants.php` — company name, admin email constants
 
 ### Business Logic Notes
 - Earthquake tariff numbers are determined by settlement's earthquake zone
@@ -78,5 +85,48 @@ php bin/console cache:clear
 - Policy codes are auto-generated with format: P + zeros + ID + date + daily count
 - App configs store system-wide values (TAX_PERCENTS, DISCOUNT_PERCENTS, EARTHQUAKE_ID, FLOOD_*_ID, CURRENCY)
 
-### CORS
-Custom `CorsListener` handles CORS headers for all API responses.
+### Related Frontend
+- **Admin panel**: `/Applications/MAMP/htdocs/reactjs/procalc-admin/src` (React)
+
+## Coding Conventions
+
+### API Response Key Casing
+
+Mixed convention exists — **match the existing casing in the controller you're editing, do not convert.**
+
+| Controllers | Casing | Examples |
+|-------------|--------|----------|
+| `AppConfigController`, `AdminAuthController`, `UserManagementController`, `UserProfileController`, `PromotionalCodeController` (public + admin) | **camelCase** | `nameBg`, `isEditable`, `fullName`, `discountPercentage` |
+| `InsuranceClauseController`, `TariffPresetController`, `TariffPresetService` | **snake_case** | `tariff_number`, `has_tariff_number`, `tariff_amount`, `insurance_clause` |
+
+Admin panel sends **camelCase** field names for User/PromotionalCode endpoints, **snake_case** for InsuranceClause/TariffPreset endpoints.
+
+### Error Response Formats
+
+Three formats coexist — **match the existing format in the controller you're editing.**
+
+| Format | Used by | Example |
+|--------|---------|---------|
+| `{'errors': ['msg1', 'msg2']}` (array) | `ValidatesEntities` trait (used by `AppConfigController`, `InsuranceClauseController`, `TariffPresetController`, `Admin PromotionalCodeController`) and `InsurancePolicyController` | Validation errors |
+| `{'message': 'string'}` | `AdminAuthController`, `UserManagementController`, `UserProfileController`, `PromotionalCodeController` (public) | Auth/user operations |
+| `{'error': 'string'}` | CRUD not-found/bad-request in most admin controllers, `FormDataController`, `TariffPdfController` | Resource lookup failures |
+
+Note: Some controllers use multiple formats (e.g., `Admin PromotionalCodeController` uses both `errors` array from trait and `error` string for not-found).
+
+### Entity Serialization
+
+Two patterns coexist:
+- `User`, `PromotionalCode` → have `toArray()` methods (camelCase keys). **If a `toArray()` exists, use it.**
+- All other entities → serialized manually in controllers. Build arrays manually matching the controller's existing key casing pattern.
+
+### Request Handling
+- JSON body parsing: `json_decode($request->getContent(), true)`
+- Query params: `$request->query->getInt()` / `$request->query->get()` with type cast
+- `PromotionalCodeController::updateEntityFromData()` accepts both snake_case and camelCase input (backwards compatibility)
+
+## Known Inconsistencies
+
+These are intentional or legacy — do not "fix" them:
+- `EarthquakeZone.tariff_number` property uses snake_case (all other entities use camelCase properties)
+- Mixed casing across API endpoints (documented above)
+- `PromotionalCodeController::updateEntityFromData()` accepts both snake_case and camelCase input for backwards compatibility

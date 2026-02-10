@@ -7,13 +7,11 @@ use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-/**
- * Controller for user profile management
- */
 #[Route('/api/v1/admin', name: 'api_v1_admin_')]
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
 class UserProfileController extends AbstractController
@@ -29,50 +27,25 @@ class UserProfileController extends AbstractController
         $this->passwordHasher = $passwordHasher;
     }
 
-    /**
-     * Get all users (excluding those with ROLE_ANONYMOUS)
-     */
     #[Route('/users', name: 'users_list', methods: ['GET'])]
     public function getAllUsers(): JsonResponse
     {
         $users = $this->userRepository->findAllExceptAnonymous();
 
-        $data = [];
-        foreach ($users as $user) {
-            $data[] = [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'firstName' => $user->getFirstName(),
-                'lastName' => $user->getLastName(),
-                'fullName' => $user->getFullName(),
-                'roles' => $user->getRoles(),
-            ];
-        }
+        $data = array_map(fn(User $user) => $user->toArray(), $users);
 
         return $this->json($data);
     }
 
-    /**
-     * Get current user profile
-     */
     #[Route('/profile', name: 'profile_get', methods: ['GET'])]
     public function getProfile(): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
 
-        return $this->json([
-            'email' => $user->getEmail(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
-            'fullName' => $user->getFullName(),
-            'roles' => $user->getRoles(),
-        ]);
+        return $this->json($user->toArray(includeId: false));
     }
 
-    /**
-     * Update user profile
-     */
     #[Route('/profile', name: 'profile_update', methods: ['PUT'])]
     public function updateProfile(Request $request): JsonResponse
     {
@@ -81,7 +54,6 @@ class UserProfileController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
 
-        // Update user data
         if (isset($data['firstName'])) {
             $user->setFirstName($data['firstName']);
         }
@@ -91,35 +63,25 @@ class UserProfileController extends AbstractController
         }
 
         if (isset($data['email'])) {
-            // Check if email is already taken by another user
             $existingUser = $this->userRepository->findOneBy(['email' => $data['email']]);
             if ($existingUser && $existingUser->getId() !== $user->getId()) {
                 return $this->json([
                     'message' => 'Имейлът вече е зает',
-                ], JsonResponse::HTTP_BAD_REQUEST);
+                ], Response::HTTP_BAD_REQUEST);
             }
-
             $user->setEmail($data['email']);
         }
 
-        // Update password if provided
         if (isset($data['password']) && !empty($data['password'])) {
             $hashedPassword = $this->passwordHasher->hashPassword($user, $data['password']);
             $user->setPassword($hashedPassword);
         }
 
-        // Save changes
         $this->userRepository->save($user, true);
 
         return $this->json([
             'message' => 'Профилът е обновен успешно',
-            'user' => [
-                'email' => $user->getEmail(),
-                'firstName' => $user->getFirstName(),
-                'lastName' => $user->getLastName(),
-                'fullName' => $user->getFullName(),
-                'roles' => $user->getRoles(),
-            ],
+            'user' => $user->toArray(includeId: false),
         ]);
     }
 }

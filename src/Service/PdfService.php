@@ -12,8 +12,6 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Exception;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Doctrine\DBAL\Connection;
 
 class PdfService
 {

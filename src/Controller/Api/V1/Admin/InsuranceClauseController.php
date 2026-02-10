@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\V1\Admin;
 
+use App\Controller\Trait\ValidatesEntities;
 use App\Entity\InsuranceClause;
 use App\Repository\InsuranceClauseRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,6 +17,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 #[Route('/api/v1/insurance-policies/admin/insurance-clauses', name: 'api_v1_insurance_policies_admin_insurance_clauses_')]
 class InsuranceClauseController extends AbstractController
 {
+    use ValidatesEntities;
+
     private InsuranceClauseRepository $insuranceClauseRepository;
     private ValidatorInterface $validator;
 
@@ -93,15 +96,8 @@ class InsuranceClauseController extends AbstractController
             }
         }
 
-        $errors = $this->validator->validate($insuranceClause);
-
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
-            }
-
-            return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        if ($errorResponse = $this->validationErrors($this->validator->validate($insuranceClause))) {
+            return $errorResponse;
         }
 
         $this->insuranceClauseRepository->save($insuranceClause, true);

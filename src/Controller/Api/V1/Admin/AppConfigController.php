@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\V1\Admin;
 
+use App\Controller\Trait\ValidatesEntities;
 use App\Entity\AppConfig;
 use App\Repository\AppConfigRepository;
 use App\Repository\InsuranceClauseRepository;
@@ -17,6 +18,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 #[Route('/api/v1/app-configs/admin', name: 'api_v1_app_configs_admin_')]
 class AppConfigController extends AbstractController
 {
+    use ValidatesEntities;
+
     private AppConfigRepository $appConfigRepository;
     private InsuranceClauseRepository $insuranceClauseRepository;
     private ValidatorInterface $validator;
@@ -81,15 +84,8 @@ class AppConfigController extends AbstractController
             $appConfig->setNameBg($data['nameBg']);
         }
 
-        $errors = $this->validator->validate($appConfig);
-
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
-            }
-
-            return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        if ($errorResponse = $this->validationErrors($this->validator->validate($appConfig))) {
+            return $errorResponse;
         }
 
         $this->appConfigRepository->save($appConfig, true);

@@ -4,13 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\V1\Admin;
 
-use App\Entity\InsurancePolicy;
 use App\Repository\InsurancePolicyRepository;
-use App\Repository\SettlementRepository;
-use App\Repository\EstateTypeRepository;
-use App\Repository\PersonRoleRepository;
-use App\Repository\IdNumberTypeRepository;
-use App\Repository\TariffPresetRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,26 +15,10 @@ use Symfony\Component\Routing\Annotation\Route;
 class InsurancePolicyController extends AbstractController
 {
     private InsurancePolicyRepository $insurancePolicyRepository;
-    private SettlementRepository $settlementRepository;
-    private EstateTypeRepository $estateTypeRepository;
-    private PersonRoleRepository $personRoleRepository;
-    private IdNumberTypeRepository $idNumberTypeRepository;
-    private TariffPresetRepository $tariffPresetRepository;
 
-    public function __construct(
-        InsurancePolicyRepository $insurancePolicyRepository,
-        SettlementRepository $settlementRepository,
-        EstateTypeRepository $estateTypeRepository,
-        PersonRoleRepository $personRoleRepository,
-        IdNumberTypeRepository $idNumberTypeRepository,
-        TariffPresetRepository $tariffPresetRepository
-    ) {
+    public function __construct(InsurancePolicyRepository $insurancePolicyRepository)
+    {
         $this->insurancePolicyRepository = $insurancePolicyRepository;
-        $this->settlementRepository = $settlementRepository;
-        $this->estateTypeRepository = $estateTypeRepository;
-        $this->personRoleRepository = $personRoleRepository;
-        $this->idNumberTypeRepository = $idNumberTypeRepository;
-        $this->tariffPresetRepository = $tariffPresetRepository;
     }
 
     #[Route('/policies', name: 'list', methods: ['GET'])]
@@ -119,4 +97,4 @@ class InsurancePolicyController extends AbstractController
             return $this->json(['error' => 'Error fetching statistics: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-} 
+}

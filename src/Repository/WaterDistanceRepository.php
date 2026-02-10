@@ -20,22 +20,4 @@ class WaterDistanceRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, WaterDistance::class);
     }
-
-    public function save(WaterDistance $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(WaterDistance $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
 }

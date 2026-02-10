@@ -32,15 +32,6 @@ class InsuranceClauseRepository extends ServiceEntityRepository
         }
     }
 
-    public function remove(InsuranceClause $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
     /**
      * Find all insurance clauses where both min_value and max_value are not null
      *

@@ -22,22 +22,4 @@ class IdNumberTypeRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, IdNumberType::class);
     }
-
-    public function save(IdNumberType $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->persist($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
-
-    public function remove(IdNumberType $entity, bool $flush = false): void
-    {
-        $this->getEntityManager()->remove($entity);
-
-        if ($flush) {
-            $this->getEntityManager()->flush();
-        }
-    }
 }

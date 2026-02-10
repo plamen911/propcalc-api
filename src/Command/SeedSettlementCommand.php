@@ -3,7 +3,6 @@
 namespace App\Command;
 
 use App\Entity\Settlement;
-use App\Entity\EarthquakeZone;
 use App\Repository\EarthquakeZoneRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\IOFactory;
