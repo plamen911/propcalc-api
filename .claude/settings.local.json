@@ -12,7 +12,8 @@
       "Bash(php bin/console app:seed-app-configs)",
       "Bash(php bin/console doctrine:query:sql \"SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='app_configs' ORDER BY ORDINAL_POSITION\")",
       "Bash(php *)",
-      "Bash(pkill -f \"php -S 127.0.0.1:8123\")"
+      "Bash(pkill -f \"php -S 127.0.0.1:8123\")",
+      "Bash(composer show *)"
     ]
   }
 }

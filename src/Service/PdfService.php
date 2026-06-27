@@ -97,6 +97,13 @@ class PdfService
             throw new \InvalidArgumentException('Selected tariff data is required');
         }
 
+        // Brand identity for the logo alt text (from config)
+        $officeNameConfig = $this->appConfigRepository->findOneBy(['name' => 'OUR_OFFICE_NAME']);
+        $brokerNameConfig = $this->appConfigRepository->findOneBy(['name' => 'OUR_BROKER_NAME']);
+        $officeName = $officeNameConfig ? $officeNameConfig->getValue() : '';
+        $brokerName = $brokerNameConfig ? $brokerNameConfig->getValue() : '';
+        $logoAlt = trim($officeName . ($officeName && $brokerName ? ' — ' : '') . $brokerName);
+
         // Build the HTML content
         $content = '
         <!DOCTYPE html>
@@ -258,11 +265,94 @@ class PdfService
                 .green-dot { background-color: #2ecc71; }
                 .yellow-dot { background-color: #f1c40f; }
                 .red-dot { background-color: #e74c3c; }
+
+                /* Brand header - mirrors propcalc-client App.jsx (desktop: logo left, badge right) */
+                .brand-table {
+                    width: 540px;
+                    margin: 0 auto 10px;
+                    border: 0;
+                    border-collapse: collapse;
+                    table-layout: fixed;
+                }
+                .brand-table td {
+                    border: 0;
+                    vertical-align: middle;
+                    padding: 0;
+                }
+                .brand-logo-cell {
+                    width: 240px;
+                    text-align: right;
+                    padding-right: 22px;
+                }
+                .brand-logo {
+                    width: 210px;
+                    height: auto;
+                }
+                .brand-sep-cell {
+                    width: 2px;
+                    padding: 0;
+                }
+                .brand-sep {
+                    width: 2px;
+                    height: 90px;
+                    margin: 0 auto;
+                    background: linear-gradient(180deg, rgba(139,33,49,0), #8b2131, rgba(139,33,49,0));
+                }
+                .brand-badge-cell {
+                    text-align: left;
+                    padding-left: 22px;
+                }
+                .calc-badge__title {
+                    display: block;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    color: #4b4f54;
+                    letter-spacing: 0.5px;
+                    font-size: 40px;
+                    line-height: 1;
+                    white-space: nowrap;
+                }
+                .calc-badge__ribbon {
+                    display: inline-block;
+                    margin-top: 6px;
+                    padding: 4px 14px;
+                    background-color: #8b2131;
+                    color: #fff;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    font-size: 20px;
+                    white-space: nowrap;
+                    transform: rotate(-3deg);
+                }
+                .brand-tagline {
+                    text-align: center;
+                    margin: 0 0 8px;
+                    color: #8b2131;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    font-size: 14px;
+                }
             </style>
         </head>
         <body>
             <div class="container">
+                <table class="brand-table">
+                    <tr>
+                        <td class="brand-logo-cell">
+                            <img class="brand-logo" src="https://daike.eu/c/assets/logo.jpg" alt="' . htmlspecialchars($logoAlt, ENT_QUOTES) . '">
+                        </td>
+                        <td class="brand-sep-cell"><div class="brand-sep"></div></td>
+                        <td class="brand-badge-cell">
+                            <span class="calc-badge__title">Домът</span>
+                            <span class="calc-badge__ribbon">без завишение</span>
+                        </td>
+                    </tr>
+                </table>
                 <div class="header">
+                    <h1>ЗАСТРАХОВКА ИМУЩЕСТВО</h1>
+                    <p>Изчислява по тарифа Бонус дом+ на Булстрад</p>
                     <h1>Тарифа - ' . $selectedTariff['name'] . '</h1>
                     <p>Генерирано на: ' . date('d.m.Y H:i:s') . '</p>
                 </div>';
