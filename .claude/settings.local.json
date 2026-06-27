@@ -6,7 +6,13 @@
       "Bash(php bin/console cache:clear:*)",
       "Bash(wc:*)",
       "Bash(xargs -n1 basename)",
-      "Bash(php bin/console debug:router --format=txt)"
+      "Bash(php bin/console debug:router --format=txt)",
+      "Bash(php -l src/Command/SeedAppConfigCommand.php)",
+      "Bash(php -l src/Controller/Api/V1/FormDataController.php)",
+      "Bash(php bin/console app:seed-app-configs)",
+      "Bash(php bin/console doctrine:query:sql \"SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='app_configs' ORDER BY ORDINAL_POSITION\")",
+      "Bash(php *)",
+      "Bash(pkill -f \"php -S 127.0.0.1:8123\")"
     ]
   }
 }

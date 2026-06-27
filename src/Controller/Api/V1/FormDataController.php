@@ -270,6 +270,26 @@ class FormDataController extends AbstractController
         $currencyConfig = $this->appConfigRepository->findOneBy(['name' => 'CURRENCY']);
         $currencySymbol = $currencyConfig ? $currencyConfig->getValue() : '';
 
+        // Get broker/office contact details from config
+        $officeConfigNames = [
+            'OUR_BROKER_NAME',
+            'OUR_OFFICE_NAME',
+            'OUR_OFFICE_EMAIL',
+            'OUR_OFFICE_PHONE1',
+            'OUR_OFFICE_PHONE2',
+        ];
+        $officeConfigs = [];
+        foreach ($this->appConfigRepository->findBy(['name' => $officeConfigNames]) as $config) {
+            $officeConfigs[$config->getName()] = $config->getValue();
+        }
+        $officeData = [
+            'our_broker_name' => $officeConfigs['OUR_BROKER_NAME'] ?? '',
+            'our_office_name' => $officeConfigs['OUR_OFFICE_NAME'] ?? '',
+            'our_office_email' => $officeConfigs['OUR_OFFICE_EMAIL'] ?? '',
+            'our_office_phone1' => $officeConfigs['OUR_OFFICE_PHONE1'] ?? '',
+            'our_office_phone2' => $officeConfigs['OUR_OFFICE_PHONE2'] ?? '',
+        ];
+
         // Get person role options
         $personRoleOptions = $personRoleRepository->findBy([], ['position' => 'ASC']);
         $personRoleData = [];
@@ -315,6 +335,7 @@ class FormDataController extends AbstractController
         // Return all data in a single response
         return $this->json([
             'currency_symbol' => $currencySymbol,
+            ...$officeData,
             'document_links' => self::getDocumentLinks(),
             'estate_types' => $estateTypesData,
             'id_number_type_options' => $idNumberTypeData,

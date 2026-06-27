@@ -78,6 +78,46 @@ class SeedAppConfigCommand extends Command
             "is_editable" => false,
             "position" => 7
         ],
+        [
+            "id" => 8,
+            "name" => "OUR_BROKER_NAME",
+            "value" => "ЗАТРАХОВАЙТЕ С ДАЙКЕ",
+            "name_bg" => "Име на брокер",
+            "is_editable" => true,
+            "position" => 8
+        ],
+        [
+            "id" => 9,
+            "name" => "OUR_OFFICE_NAME",
+            "value" => "ДЖЕНЕРАЛ БРОКЕР КЛУБ ООД",
+            "name_bg" => "Име на офис",
+            "is_editable" => true,
+            "position" => 9
+        ],
+        [
+            "id" => 10,
+            "name" => "OUR_OFFICE_EMAIL",
+            "value" => "office@general-bg.com",
+            "name_bg" => "Имейл на офис",
+            "is_editable" => true,
+            "position" => 10
+        ],
+        [
+            "id" => 11,
+            "name" => "OUR_OFFICE_PHONE1",
+            "value" => "+359 892 391 959",
+            "name_bg" => "Телефон на офис 1",
+            "is_editable" => true,
+            "position" => 11
+        ],
+        [
+            "id" => 12,
+            "name" => "OUR_OFFICE_PHONE2",
+            "value" => "+359 899 116 117",
+            "name_bg" => "Телефон на офис 2",
+            "is_editable" => true,
+            "position" => 12
+        ],
     ];
 
     public function __construct(EntityManagerInterface $entityManager)
