@@ -4,3 +4,12 @@ lexik_jwt_authentication:
     pass_phrase: '%env(JWT_PASSPHRASE)%'
     token_ttl: 3600 # 1 hour
     user_identity_field: email
+
+when@test:
+    lexik_jwt_authentication:
+        # The paths above are hardcoded to config/jwt, which holds the real keys. Tests
+        # sign with throwaway keys generated into var/ by bin/setup-test-db.sh, so the
+        # production keys are never needed - or usable - to run the suite.
+        secret_key: '%kernel.project_dir%/var/jwt/private.pem'
+        public_key: '%kernel.project_dir%/var/jwt/public.pem'
+        pass_phrase: '%env(JWT_PASSPHRASE)%'

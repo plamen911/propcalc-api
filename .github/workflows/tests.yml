@@ -1,0 +1,100 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch supersedes an in-flight run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phpunit:
+    name: PHPUnit (PHP ${{ matrix.php-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.4']
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          # Throwaway credentials for an ephemeral service container. Not a secret.
+          MYSQL_ROOT_PASSWORD: ci_throwaway_password
+          MYSQL_DATABASE: propcalc_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -pci_throwaway_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      APP_ENV: test
+      # Overrides the placeholder DSN committed in .env.test.
+      DATABASE_URL: "mysql://root:ci_throwaway_password@127.0.0.1:3306/propcalc_test?serverVersion=8.4&charset=utf8mb4"
+      JWT_PASSPHRASE: testpassphrase
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: ctype, iconv, pdo_mysql, intl, mbstring, zip, gd
+          coverage: none
+          # dompdf fetches its logo through the stream layer, which the test suite
+          # intercepts locally. Keep fopen wrappers enabled so that interception works.
+          ini-values: allow_url_fopen=1, memory_limit=512M
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ matrix.php-version }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ matrix.php-version }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Generate throwaway JWT keys
+        run: |
+          mkdir -p var/jwt
+          openssl genpkey -out var/jwt/private.pem -aes256 \
+            -pass pass:"$JWT_PASSPHRASE" -algorithm RSA -pkeyopt rsa_keygen_bits:4096
+          openssl pkey -in var/jwt/private.pem -passin pass:"$JWT_PASSPHRASE" \
+            -out var/jwt/public.pem -pubout
+          chmod 600 var/jwt/private.pem
+
+      - name: Wait for MySQL
+        run: |
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -u root -pci_throwaway_password --silent; then
+              echo "MySQL is up"; exit 0
+            fi
+            sleep 2
+          done
+          echo "MySQL did not become ready in time"; exit 1
+
+      # The schema is built from entity metadata rather than migrations: the only
+      # migration in the repository is an ALTER TABLE with no baseline, so
+      # doctrine:migrations:migrate cannot build a database from empty. Seeding is
+      # driven by tests/bootstrap.php, which also applies the compensating column
+      # defaults the seeders need.
+      - name: Run the test suite
+        run: vendor/bin/phpunit
+
+      - name: Show test log on failure
+        if: failure()
+        run: tail -n 200 var/log/test.log || true

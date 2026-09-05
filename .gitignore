@@ -33,3 +33,13 @@ specs/~$earthquake_zones.xlsx
 .env
 .editorconfig
 symfony.lock
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+###> test suite ###
+/var/jwt/
+/.env.test.local
+###< test suite ###

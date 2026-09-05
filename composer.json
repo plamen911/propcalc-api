@@ -36,7 +36,10 @@
             "symfony/runtime": true
         },
         "bump-after-update": true,
-        "sort-packages": true
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2"
+        }
     },
     "autoload": {
         "psr-4": {
@@ -68,7 +71,9 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
-        ]
+        ],
+        "test": "phpunit",
+        "test:setup": "bin/setup-test-db.sh"
     },
     "conflict": {
         "symfony/symfony": "*"
@@ -80,6 +85,13 @@
         }
     },
     "require-dev": {
-        "symfony/maker-bundle": "^1.64"
+        "dama/doctrine-test-bundle": "^8.6",
+        "nikic/php-parser": "^5.7",
+        "phpunit/phpunit": "^11.5",
+        "symfony/browser-kit": "7.3.*",
+        "symfony/css-selector": "7.3.*",
+        "symfony/dom-crawler": "^7.4.12",
+        "symfony/maker-bundle": "^1.64",
+        "symfony/phpunit-bridge": "7.3.*"
     }
 }
