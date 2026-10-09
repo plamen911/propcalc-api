@@ -21,7 +21,7 @@ PROD_SSH_HOST="${PROD_SSH_HOST:-91.215.216.12}"
 PROD_SSH_PORT="${PROD_SSH_PORT:-22022}"
 PROD_SSH_USER="${PROD_SSH_USER:-teodor81}"
 PROD_PATH="${PROD_PATH:-/home/teodor81/propcalc.zastrahovaite.com}"
-PROD_PHP="${PROD_PHP:-/usr/local/php8.4/bin/php}"
+PROD_PHP="${PROD_PHP:-/usr/local/php8.3/bin/php}"
 
 ASSUME_YES=0
 KEEP_DUMP=0
@@ -42,7 +42,7 @@ Options:
 Environment overrides:
   PROD_SSH_HOST (default 91.215.216.12)   PROD_SSH_PORT (22022)
   PROD_SSH_USER (teodor81)                PROD_PATH (/home/teodor81/propcalc.zastrahovaite.com)
-  PROD_PHP (/usr/local/php8.4/bin/php)
+  PROD_PHP (/usr/local/php8.3/bin/php)
 
 Warning: this DROPs the local database. There is no backup.
 USAGE

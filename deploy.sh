@@ -26,7 +26,11 @@ DEPLOY_SSH_HOST="${DEPLOY_SSH_HOST:-91.215.216.12}"
 DEPLOY_SSH_PORT="${DEPLOY_SSH_PORT:-22022}"
 DEPLOY_SSH_USER="${DEPLOY_SSH_USER:-teodor81}"
 DEPLOY_PATH="${DEPLOY_PATH:-/home/teodor81/propcalc.zastrahovaite.com}"
-DEPLOY_PHP="${DEPLOY_PHP:-/usr/local/php8.4/bin/php}"
+# MUST match the PHP version the website runs (cPanel MultiPHP for the domain, currently
+# 8.3), not merely the newest one installed: the cache is compiled here on the CLI, and a
+# cache built on a newer PHP can contain syntax the web PHP can't parse (8.4's
+# `new Foo()->bar()` gave every Doctrine-backed route a 500 on 8.3).
+DEPLOY_PHP="${DEPLOY_PHP:-/usr/local/php8.3/bin/php}"
 
 EXCLUDE_FILE="deploy-excludes.txt"
 
@@ -52,7 +56,7 @@ Options:
 Environment overrides:
   DEPLOY_SSH_HOST (default 91.215.216.12)   DEPLOY_SSH_PORT (22022)
   DEPLOY_SSH_USER (teodor81)                DEPLOY_PATH (/home/teodor81/propcalc.zastrahovaite.com)
-  DEPLOY_PHP (/usr/local/php8.4/bin/php)
+  DEPLOY_PHP (/usr/local/php8.3/bin/php)
 
 Notes:
   rsync runs WITHOUT --delete: files are added and updated, never removed.
@@ -234,6 +238,17 @@ remote "$POST" || die "Post-deploy steps failed on the server. The files are upl
     fix the cause and re-run, or investigate with:
     ssh -p ${DEPLOY_SSH_PORT} ${REMOTE}"
 
+# Smoke test through the real web stack. The CLI can be healthy while the website is
+# not (different PHP, sandboxed environment), so prove a database-backed public route
+# answers. Minting an anonymous token is exactly what every visitor's first request does.
+step "Smoke test"
+SMOKE_URL="https://propcalc.zastrahovaite.com/api/v1/auth/anonymous"
+SMOKE_STATUS="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST "$SMOKE_URL" || true)"
+[ "$SMOKE_STATUS" = "200" ] || die "Smoke test failed: POST ${SMOKE_URL} answered ${SMOKE_STATUS:-no response}.
+    The files are deployed but the site is not healthy. Check that DEPLOY_PHP matches the
+    domain's PHP version in cPanel, then rebuild the cache with it:
+    ssh -p ${DEPLOY_SSH_PORT} ${REMOTE} \"cd ${DEPLOY_PATH} && APP_ENV=prod ${DEPLOY_PHP} bin/console cache:clear\""
+info "POST /api/v1/auth/anonymous -> 200"
+
 step "Done"
 info "Deployed ${REF_SHA} (${REF_SUBJECT}) to ${DEPLOY_PATH}."
-info "Verify: curl -sI https://propcalc.zastrahovaite.com/ | head -1"

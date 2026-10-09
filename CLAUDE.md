@@ -58,7 +58,7 @@ php bin/console cache:clear
 
 ## Deployment
 
-Production: `teodor81@91.215.216.12:22022`, `/home/teodor81/propcalc.zastrahovaite.com`, PHP `/usr/local/php8.4/bin/php`, MariaDB 10.6.
+Production: `teodor81@91.215.216.12:22022`, `/home/teodor81/propcalc.zastrahovaite.com`, PHP `/usr/local/php8.3/bin/php`, MariaDB 10.6. The website runs **PHP 8.3** (cPanel MultiPHP), so all CLI steps must use 8.3 too: a cache compiled on 8.4 breaks the site with a ParseError.
 
 - **`deploy.sh`** ships a clean `git archive` of the ref (only tracked files), minus `deploy-excludes.txt`. Then, on the server, it runs `composer.phar install --no-dev` and `doctrine:migrations:migrate`. `vendor/`, `var/`, `.env*`, `config/jwt/` and `public/.htaccess` are server-owned and never uploaded.
 - **rsync never deletes.** A file removed from the repo stays on the server. The preflight refuses to deploy if the server has migration files the ref doesn't. If that happens, move the stale file out of `migrations/` on the server.
