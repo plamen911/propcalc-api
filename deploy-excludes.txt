@@ -66,3 +66,4 @@ public/error_log
 /generate_jwt_keys.sh
 /deploy.sh
 /deploy-excludes.txt
+/sync-prod-db.sh
