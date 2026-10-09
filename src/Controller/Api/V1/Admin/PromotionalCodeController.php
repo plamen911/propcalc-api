@@ -13,9 +13,11 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/v1/admin/promotional-codes', name: 'api_v1_admin_promotional_codes_')]
+#[IsGranted('ROLE_ADMIN')]
 class PromotionalCodeController extends AbstractController
 {
     use ValidatesEntities;

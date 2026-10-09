@@ -164,6 +164,26 @@ class FormDataController extends AbstractController
         return $this->json($data);
     }
 
+    /**
+     * The tariff catalogue for the quote form, under a public-facing name.
+     *
+     * Identical payload to the older GET /api/v1/insurance-policies/admin/tariff-presets,
+     * which the calculator still calls; both delegate to the same service method. This
+     * route exists so the client can stop reading out of the admin namespace, after
+     * which the admin-side read and its access_control exception can be removed.
+     */
+    #[Route('/tariff-presets', name: 'api_v1_form_data_tariff_presets', methods: ['GET'])]
+    public function getTariffPresets(Request $request): JsonResponse
+    {
+        $settlementId = $request->query->get('settlement_id') ? $request->query->getInt('settlement_id') : null;
+        $distanceToWaterId = $request->query->get('distance_to_water_id') ? $request->query->getInt('distance_to_water_id') : null;
+        $areaSqMeters = $request->query->get('area_sq_meters') ? $request->query->getInt('area_sq_meters') : 0;
+
+        return $this->json(
+            $this->tariffPresetService->getTariffPresetsForQuote($settlementId, $distanceToWaterId, $areaSqMeters)
+        );
+    }
+
     #[Route('/custom-package-statistics', name: 'api_v1_form_data_custom_package_statistics', methods: ['POST'])]
     public function calculateCustomPackageStatistics(Request $request): JsonResponse
     {

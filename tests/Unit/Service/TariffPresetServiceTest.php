@@ -324,13 +324,13 @@ final class TariffPresetServiceTest extends TestCase
     // -----------------------------------------------------------------------
 
     /**
-     * Characterization test. getTariffPresets() rounds each line to 2dp and then sums
-     * the rounded strings, while calculateCustomPackageStatistics() sums the raw floats
-     * and rounds once at the end. The same clause set can therefore price differently
-     * through the two entry points. Reported as a finding.
+     * The preset path used to sum rounded lines while the custom path summed raw floats,
+     * so the same basket priced a cent apart depending on which entry point built it -
+     * on roughly a third of custom quotes. Both paths round each line now: the premium
+     * is the sum of the line totals the customer is actually shown.
      */
     #[Test]
-    public function presetAndCustomPathsDisagreeOnRounding_KNOWN_GAP(): void
+    public function presetAndCustomPathsAgreeOnRounding(): void
     {
         $clauses = [
             ['id' => 1, 'tariffNumber' => 0.1, 'presetAmount' => 5.0],
@@ -341,40 +341,64 @@ final class TariffPresetServiceTest extends TestCase
         $presetTotal = $this->buildService($clauses)
             ->getTariffPresets()[0]['statistics']['total_premium'];
 
-        // Each line is 5 * 0.1 / 100 = 0.005.
+        // Each line is 5 * 0.1 / 100 = 0.005, shown as 0.01.
         $customTotal = $this->buildService($clauses)
             ->calculateCustomPackageStatistics([1 => 5.0, 2 => 5.0, 3 => 5.0])['statistics']['total_premium'];
 
-        self::assertSame('0.03', $presetTotal, 'Preset path: each line rounds to 0.01, then sums.');
-        self::assertSame('0.02', $customTotal, 'Custom path: sums 0.015 first, then rounds.');
-        self::assertNotSame($presetTotal, $customTotal);
+        self::assertSame('0.03', $presetTotal, 'Each line rounds to 0.01, then sums.');
+        self::assertSame($presetTotal, $customTotal, 'The two entry points must price a basket identically.');
     }
 
     /**
-     * total_amount is derived from unrounded intermediates, so it is not always equal to
-     * the printed discounted_premium plus the printed tax_amount.
+     * The premium is the sum of the printed line totals, so a customer adding up the
+     * lines on the quote arrives at the premium shown.
      */
     #[Test]
-    public function totalAmountIsDerivedFromUnroundedIntermediates_KNOWN_GAP(): void
+    public function thePremiumIsTheSumOfThePrintedLines(): void
+    {
+        $preset = $this->buildService([
+            ['id' => 1, 'tariffNumber' => 0.1, 'presetAmount' => 5.0],
+            ['id' => 2, 'tariffNumber' => 0.007, 'presetAmount' => 7500.0],
+            ['id' => 3, 'tariffNumber' => 0.11, 'presetAmount' => 120000.0],
+        ])->getTariffPresets()[0];
+
+        $printed = 0.0;
+        foreach ($preset['tariff_preset_clauses'] as $clause) {
+            $printed += (float) $clause['line_total'];
+        }
+
+        self::assertSame($preset['statistics']['total_premium'], number_format($printed, 2, '.', ''));
+    }
+
+    /**
+     * total_amount is the printed parts added, not a fresh calculation from unrounded
+     * intermediates.
+     *
+     * A premium of 100.09 at the live 40%/2% settings is one of the roughly one in four
+     * values where the two differ: the exact chain gives 100.09 * 0.6 * 1.02 = 61.25508,
+     * which displays as 61.26, while the parts are 60.05 + 1.20 = 61.25. The parts are
+     * what the client charges and what the PDF prints, so the parts win.
+     */
+    #[Test]
+    public function totalAmountIsThePrintedPartsAddedUp(): void
     {
         $service = $this->buildService(
-            [['id' => 1, 'tariffNumber' => 0.1, 'presetAmount' => 100250.0]],
-            ['DISCOUNT_PERCENTS' => '0', 'TAX_PERCENTS' => '3']
+            [['id' => 1, 'tariffNumber' => 0.1, 'presetAmount' => 100090.0]],
+            ['DISCOUNT_PERCENTS' => '40', 'TAX_PERCENTS' => '2']
         );
 
         $statistics = $service->getTariffPresets()[0]['statistics'];
 
-        $printedSum = number_format(
-            (float) $statistics['discounted_premium'] + (float) $statistics['tax_amount'],
-            2,
-            '.',
-            ''
-        );
+        self::assertSame('100.09', $statistics['total_premium']);
+        self::assertSame('60.05', $statistics['discounted_premium']);   // 60.054 rounded
+        self::assertSame('1.20', $statistics['tax_amount']);            // 2% of the rounded 60.05
+        self::assertSame('61.25', $statistics['total_amount']);         // 60.05 + 1.20, not 61.255
 
-        self::assertSame('100.25', $statistics['discounted_premium']);
-        self::assertSame('3.01', $statistics['tax_amount']);   // 3.0075 rounded for display
-        self::assertSame('103.26', $statistics['total_amount']); // from 103.2575, not 100.25 + 3.01
-        self::assertSame('103.26', $printedSum);
+        self::assertSame(
+            $statistics['total_amount'],
+            number_format((float) $statistics['discounted_premium'] + (float) $statistics['tax_amount'], 2, '.', ''),
+            'The printed parts must always add up to the printed total.'
+        );
     }
 
     // -----------------------------------------------------------------------

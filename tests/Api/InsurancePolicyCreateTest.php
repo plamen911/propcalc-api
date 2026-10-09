@@ -226,6 +226,50 @@ final class InsurancePolicyCreateTest extends ApiTestCase
     }
 
     // -----------------------------------------------------------------------
+    // The money
+    // -----------------------------------------------------------------------
+
+    /**
+     * The client computes subtotal/tax/total and posts them, so these are the figures
+     * that get stored and charged - the API only sees the result. A promotional code
+     * larger than the premium left after the regular discount used to produce a negative
+     * total on both sides. StatisticsService caps the promo now; this refuses a negative
+     * figure arriving from anywhere else, including a client that has not been
+     * redeployed yet.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function moneyFields(): iterable
+    {
+        yield 'subtotal' => ['subtotal'];
+        yield 'subtotal_tax' => ['subtotal_tax'];
+        yield 'total' => ['total'];
+    }
+
+    #[DataProvider('moneyFields')]
+    #[Test]
+    public function aNegativeMoneyFieldIsRejected(string $field): void
+    {
+        $this->post($this->validPayload([$field => -21.19]));
+
+        self::assertSame(Response::HTTP_BAD_REQUEST, $this->statusCode(), $field);
+        self::assertNotEmpty($this->jsonResponse()['errors']);
+    }
+
+    /**
+     * Zero is legitimate: a promo that exactly cancels the premium left after the
+     * regular discount produces a total of 0.00, and that order must still go through.
+     */
+    #[Test]
+    public function aZeroTotalIsAccepted(): void
+    {
+        $this->post($this->validPayload(['subtotal' => 192.70, 'subtotal_tax' => 0.0, 'total' => 0.0]));
+
+        self::assertSame(Response::HTTP_CREATED, $this->statusCode());
+        self::assertSame(0.0, (float) $this->jsonResponse()['total']);
+    }
+
+    // -----------------------------------------------------------------------
     // Successful creation
     // -----------------------------------------------------------------------
 

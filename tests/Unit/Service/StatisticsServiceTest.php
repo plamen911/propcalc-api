@@ -133,17 +133,52 @@ final class StatisticsServiceTest extends TestCase
     }
 
     /**
-     * Characterization test, not an endorsement: nothing clamps the result at zero, so a
-     * promo percentage large enough to exceed the post-discount premium produces a
-     * negative total. Reported as a finding.
+     * A promo can take the premium to zero and no further. Uncapped, any code above
+     * (100 - regularDiscountPercent) produced a negative premium, a negative tax and a
+     * negative total - a policy that pays the customer. discountPercentage is validated
+     * only as 0-100, so a 70% code is one admin form away.
      */
     #[Test]
-    public function aPromoLargerThanTheRemainingPremiumProducesANegativeTotal_KNOWN_GAP(): void
+    public function aPromoLargerThanTheRemainingPremiumIsCappedAtIt(): void
     {
+        // 100 less the 40% regular discount leaves 60; an 80% promo would take off 80.
         $result = $this->service->calculate(100.0, 2.0, 40.0, 80.0);
 
-        self::assertSame(-20.0, $result['promoDiscountAmount']);
-        self::assertSame(-0.4, $result['taxAmount']);
-        self::assertSame(-20.4, $result['totalAmount']);
+        self::assertSame(0.0, $result['promoDiscountAmount']);
+        self::assertSame(0.0, $result['taxAmount']);
+        self::assertSame(0.0, $result['totalAmount']);
+    }
+
+    #[Test]
+    public function aPromoExactlyEqualToTheRemainingPremiumZeroesTheTotal(): void
+    {
+        // The tipping point: 100 - 40% = 60, and a 60% promo takes off exactly 60.
+        $result = $this->service->calculate(100.0, 2.0, 40.0, 60.0);
+
+        self::assertSame(0.0, $result['promoDiscountAmount']);
+        self::assertSame(0.0, $result['totalAmount']);
+    }
+
+    #[Test]
+    public function aPromoBelowTheRemainingPremiumIsUnaffectedByTheCap(): void
+    {
+        // The ordinary case, and the one every live promo code falls into.
+        $result = $this->service->calculate(100.0, 2.0, 40.0, 20.0);
+
+        self::assertSame(40.0, $result['promoDiscountAmount']);
+        self::assertSame(0.8, $result['taxAmount']);
+        self::assertSame(40.8, $result['totalAmount']);
+    }
+
+    #[Test]
+    public function noPromoPercentageCanProduceANegativeTotal(): void
+    {
+        for ($promo = 0; $promo <= 100; $promo++) {
+            $result = $this->service->calculate(207.70, 2.0, 40.0, (float) $promo);
+
+            self::assertGreaterThanOrEqual(0.0, $result['totalAmount'], sprintf('promo %d%%', $promo));
+            self::assertGreaterThanOrEqual(0.0, $result['taxAmount'], sprintf('promo %d%%', $promo));
+            self::assertGreaterThanOrEqual(0.0, $result['promoDiscountAmount'], sprintf('promo %d%%', $promo));
+        }
     }
 }

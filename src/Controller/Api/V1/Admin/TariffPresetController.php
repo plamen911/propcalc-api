@@ -16,8 +16,15 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
+/**
+ * Every action here requires ROLE_ADMIN except listTariffPresets(), which the public
+ * calculator reads with an anonymous token. The check is therefore repeated per method
+ * rather than declared on the class: a class-level #[IsGranted] applies to every action
+ * and cannot be relaxed by a method-level one.
+ */
 #[Route('/api/v1/insurance-policies/admin', name: 'api_v1_insurance_policies_admin_')]
 class TariffPresetController extends AbstractController
 {
@@ -43,46 +50,75 @@ class TariffPresetController extends AbstractController
         $this->tariffPresetService = $tariffPresetService;
     }
 
+    /**
+     * Read-only tariff catalogue. Deliberately NOT ROLE_ADMIN: the public calculator
+     * calls this with an anonymous token. Also served, under a name that says so, by
+     * FormDataController::getTariffPresets(); when propcalc-client has moved to that
+     * route, this action and the matching access_control rule can go.
+     */
     #[Route('/tariff-presets', name: 'tariff_presets_list', methods: ['GET'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function listTariffPresets(Request $request): JsonResponse
     {
         $settlementId = $request->query->get('settlement_id') ? $request->query->getInt('settlement_id') : null;
         $distanceToWaterId = $request->query->get('distance_to_water_id') ? $request->query->getInt('distance_to_water_id') : null;
         $areaSqMeters = $request->query->get('area_sq_meters') ? $request->query->getInt('area_sq_meters') : 0;
 
-        $data = $this->tariffPresetService->getTariffPresets($settlementId, $distanceToWaterId);
+        return $this->json(
+            $this->tariffPresetService->getTariffPresetsForQuote($settlementId, $distanceToWaterId, $areaSqMeters)
+        );
+    }
 
-        if ($areaSqMeters > 0) {
-            $data = array_slice(
-                array_values(
-                    array_filter($data, function (array $item) use ($areaSqMeters) {
-                        return !empty($item['tariff_preset_clauses'])
-                            && is_array($item['tariff_preset_clauses'])
-                            && isset($item['tariff_preset_clauses'][0]['tariff_amount'])
-                            && ((int)$item['tariff_preset_clauses'][0]['tariff_amount']) >= $areaSqMeters * 1000;
-                    })
-                ), 0, 5);
+    /**
+     * Checks the create payload before anything reaches a typed setter or the database.
+     *
+     * Previously a body with no name produced a NOT NULL violation from MySQL and a 500;
+     * a non-string name produced a TypeError from setName(). Both are client mistakes
+     * and answer 422 now. The Assert\NotBlank on TariffPreset::$name is the backstop
+     * for anything that gets past this.
+     *
+     * @return array<string, list<string>>
+     */
+    private function payloadErrors(mixed $data): array
+    {
+        if (!is_array($data)) {
+            return ['body' => ['Expected a JSON object.']];
         }
 
-        return $this->json($data);
+        $errors = [];
+
+        if (!array_key_exists('name', $data)) {
+            $errors['name'][] = 'The preset name is required.';
+        } elseif (!is_string($data['name'])) {
+            $errors['name'][] = 'The preset name must be a string.';
+        } elseif (trim($data['name']) === '') {
+            $errors['name'][] = 'The preset name cannot be blank.';
+        }
+
+        if (array_key_exists('active', $data) && !is_bool($data['active'])) {
+            $errors['active'][] = 'The active flag must be true or false.';
+        }
+
+        if (array_key_exists('tariff_preset_clauses', $data) && !is_array($data['tariff_preset_clauses'])) {
+            $errors['tariff_preset_clauses'][] = 'The clause list must be an array.';
+        }
+
+        return $errors;
     }
 
     #[Route('/tariff-presets', name: 'tariff_presets_create', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function createTariffPreset(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
+        if ($errorResponse = $this->fieldValidationErrors($this->payloadErrors($data))) {
+            return $errorResponse;
+        }
+
         $tariffPreset = new TariffPreset();
-
-        if (isset($data['name'])) {
-            $tariffPreset->setName($data['name']);
-        }
-
-        if (isset($data['active'])) {
-            $tariffPreset->setActive($data['active']);
-        } else {
-            $tariffPreset->setActive(true);
-        }
+        $tariffPreset->setName(trim($data['name']));
+        $tariffPreset->setActive($data['active'] ?? true);
 
         $lastPosition = 0;
         $lastPreset = $this->tariffPresetRepository->findOneBy([], ['position' => 'DESC']);
@@ -127,6 +163,7 @@ class TariffPresetController extends AbstractController
     }
 
     #[Route('/tariff-presets/{id}', name: 'tariff_presets_update', methods: ['PUT'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function updateTariffPreset(Request $request, int $id): JsonResponse
     {
         $tariffPreset = $this->tariffPresetRepository->find($id);
@@ -174,6 +211,7 @@ class TariffPresetController extends AbstractController
     }
 
     #[Route('/tariff-presets/{id}', name: 'tariff_presets_delete', methods: ['DELETE'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function deleteTariffPreset(int $id): JsonResponse
     {
         $tariffPreset = $this->tariffPresetRepository->find($id);
@@ -193,6 +231,7 @@ class TariffPresetController extends AbstractController
     }
 
     #[Route('/tariff-preset-clauses', name: 'tariff_preset_clauses_list', methods: ['GET'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function listTariffPresetClauses(): JsonResponse
     {
         $tariffPresetClauses = $this->tariffPresetClauseRepository->findAllWithActiveInsuranceClauses();
@@ -218,6 +257,7 @@ class TariffPresetController extends AbstractController
     }
 
     #[Route('/tariff-preset-clauses/{id}', name: 'tariff_preset_clauses_update', methods: ['PUT'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function updateTariffPresetClause(Request $request, int $id): JsonResponse
     {
         $tariffPresetClause = $this->tariffPresetClauseRepository->find($id);

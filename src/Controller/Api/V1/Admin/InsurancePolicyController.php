@@ -10,8 +10,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/v1/insurance-policies/admin', name: 'api_v1_insurance_policies_admin_')]
+#[IsGranted('ROLE_ADMIN')]
 class InsurancePolicyController extends AbstractController
 {
     private InsurancePolicyRepository $insurancePolicyRepository;
@@ -70,7 +72,14 @@ class InsurancePolicyController extends AbstractController
         }
     }
 
-    #[Route('/policies/{id}', name: 'view', methods: ['GET'])]
+    /**
+     * The {id} placeholder is constrained to digits. Without it this route, declared
+     * before /policies/stats, matched "stats" as an id and the stats endpoint could
+     * never be reached - it answered 500 on a TypeError instead. The requirement fixes
+     * it independently of declaration order, so re-ordering the methods cannot bring
+     * the shadowing back.
+     */
+    #[Route('/policies/{id}', name: 'view', methods: ['GET'], requirements: ['id' => '\\d+'])]
     public function view(int $id): JsonResponse
     {
         try {

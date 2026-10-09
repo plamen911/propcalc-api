@@ -18,13 +18,35 @@ security:
             stateless: true
             jwt: ~
 
-    # Easy way to control access for large sections of your site
-    # Note: Only the *first* access control that matches will be used
+    # Only the *first* matching access control is used, so these run narrowest first:
+    # the public endpoints, then the calculator's one read into the admin namespace,
+    # then the three admin prefixes, then the catch-all.
+    #
+    # Every path here is a regular expression and is anchored with $ where an exact
+    # match is meant. An unanchored prefix silently covers every path below it - that is
+    # how /tariff/pdf/email became an unauthenticated way to make the service send mail.
     access_control:
-        - { path: ^/api/v1/auth/anonymous, roles: PUBLIC_ACCESS }
-        - { path: ^/api/v1/auth-test/public, roles: PUBLIC_ACCESS }
-        - { path: ^/api/v1/admin/auth/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api/v1/tariff/pdf, roles: PUBLIC_ACCESS }
+        # -- Public: reachable with no token at all ---------------------------------
+        - { path: ^/api/v1/auth/anonymous$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/v1/admin/auth/login$, roles: PUBLIC_ACCESS }
+        # Exact path only. The /email variant below it needs a token (any role).
+        - { path: ^/api/v1/tariff/pdf$, roles: PUBLIC_ACCESS }
+
+        # -- The public calculator's one read out of the admin namespace ------------
+        # propcalc-client's covered-risks step reads the tariff catalogue with an
+        # anonymous token. The payload is the public price list, not admin data.
+        # /api/v1/form-data/tariff-presets serves the same response under a public
+        # name; once the client has moved to it, delete this rule.
+        - { path: ^/api/v1/insurance-policies/admin/tariff-presets$, methods: [GET], roles: IS_AUTHENTICATED_FULLY }
+
+        # -- Admin: ROLE_ADMIN, not merely a valid token ----------------------------
+        # The admin surface is spread over three unrelated prefixes; all three are
+        # listed, and each admin controller repeats the check with #[IsGranted].
+        - { path: ^/api/v1/insurance-policies/admin, roles: ROLE_ADMIN }
+        - { path: ^/api/v1/app-configs/admin, roles: ROLE_ADMIN }
+        - { path: ^/api/v1/admin, roles: ROLE_ADMIN }
+
+        # -- Everything else: any authenticated caller, anonymous tokens included ---
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:

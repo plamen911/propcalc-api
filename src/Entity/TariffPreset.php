@@ -8,6 +8,7 @@ use App\Repository\TariffPresetRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TariffPresetRepository::class)]
 #[ORM\Table(name: 'tariff_presets')]
@@ -23,6 +24,7 @@ class TariffPreset
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
+    #[Assert\NotBlank(message: 'The preset name is required.')]
     private ?string $name = null;
 
     #[ORM\Column(type: 'boolean')]

@@ -191,6 +191,19 @@ class InsurancePolicyController extends AbstractController
             }
         }
 
+        // Validate the money. The client computes subtotal/tax/total and posts them, so
+        // these are the figures that get stored and charged - the API only sees the
+        // result. A promotional code larger than the premium left after the regular
+        // discount used to produce a negative total on both sides; the cap in
+        // StatisticsService fixes the figures this API produces, and this refuses a
+        // negative one arriving from anywhere else. Zero is legitimate: a promo that
+        // exactly cancels the remaining premium.
+        foreach (['subtotal' => 'Междинната сума', 'subtotal_tax' => 'Данъкът', 'total' => 'Общата сума'] as $field => $label) {
+            if (isset($data[$field]) && is_numeric($data[$field]) && (float) $data[$field] < 0) {
+                $errors[] = sprintf('%s не може да бъде отрицателна.', $label);
+            }
+        }
+
         // Validate gender if provided and id_number_type_id != 1
         if (isset($data['gender']) && isset($data['id_number_type_id']) && (int)$data['id_number_type_id'] != 1 && !in_array($data['gender'], ['male', 'female'])) {
             $errors[] = 'Полът трябва да бъде "male" или "female".';

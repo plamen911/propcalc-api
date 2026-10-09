@@ -66,8 +66,28 @@ final class AnonymousAuthTest extends ApiTestCase
     }
 
     /**
-     * Characterization test: every unauthenticated call inserts a row into the user
-     * table, with no rate limiting or cleanup. Reported as a finding.
+     * The retention command ages rows out by created_at, so a minted user must carry
+     * one. An undated row is skipped by the purge and would accumulate for ever.
+     */
+    #[Test]
+    public function aMintedAnonymousUserIsStamped(): void
+    {
+        $this->request('POST', '/api/v1/auth/anonymous');
+        $email = $this->jsonResponse()['user']['email'];
+
+        $user = $this->em()->getRepository(User::class)->findOneBy(['email' => $email]);
+
+        self::assertNotNull($user);
+        self::assertNotNull($user->getCreatedAt(), 'created_at drives app:purge-anonymous-users.');
+    }
+
+    /**
+     * Characterization test: every unauthenticated call still inserts a row into the
+     * user table. Left deliberately: the agreed mitigation is retention, not
+     * prevention, because reuse or a row-less token would change what the public
+     * calculator gets. app:purge-anonymous-users ages the rows out - see
+     * tests/Integration/Command/PurgeAnonymousUsersTest.php - and this test guards the
+     * mint path itself against changing under it. There is still no rate limiting.
      */
     #[Test]
     public function everyCallPersistsANewUserRow_KNOWN_GAP(): void

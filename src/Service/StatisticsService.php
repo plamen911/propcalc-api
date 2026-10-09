@@ -15,7 +15,9 @@ class StatisticsService
      * @param float $insurancePremiumAmount The base insurance premium amount
      * @param float $taxPercent The tax percentage to apply
      * @param float $regularDiscountPercent The regular discount percentage
-     * @param float $promoDiscountPercent Optional promotional discount percentage
+     * @param float $promoDiscountPercent Optional promotional discount percentage,
+     *                                     capped at the premium left after the regular
+     *                                     discount so the total can never go negative
      *
      * @return array Statistics including premium amounts, discounts, tax and totals
      */
@@ -37,7 +39,15 @@ class StatisticsService
 
         // Apply promotional discount if applicable
         if ($promoDiscountPercent > 0) {
-            $promoDiscountAmount = round($regularDiscountAmount - ($insurancePremiumAmount * ($promoDiscountPercent / 100)), 2);
+            // A promo can take the premium down to zero and no further. Uncapped, any
+            // code above (100 - regularDiscountPercent) produced a negative premium, a
+            // negative tax and a negative total - a policy that pays the customer.
+            $promoAmount = min(
+                round($insurancePremiumAmount * ($promoDiscountPercent / 100), 2),
+                max(0.0, $regularDiscountAmount)
+            );
+
+            $promoDiscountAmount = round($regularDiscountAmount - $promoAmount, 2);
             $taxAmount = round($promoDiscountAmount * $taxPercent / 100, 2);
             $totalAmount = round($promoDiscountAmount + $taxAmount, 2);
         }

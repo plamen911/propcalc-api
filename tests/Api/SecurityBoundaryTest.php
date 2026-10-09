@@ -8,21 +8,25 @@ use App\Tests\Support\ApiTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * The security boundary defined by config/packages/security.yaml.
  *
- * Four access_control rules grant PUBLIC_ACCESS; everything else under ^/api requires
- * IS_AUTHENTICATED_FULLY through the stateless JWT firewall.
+ * Three access_control rules grant PUBLIC_ACCESS; the admin prefixes require ROLE_ADMIN;
+ * everything else under ^/api requires IS_AUTHENTICATED_FULLY through the stateless JWT
+ * firewall.
  *
- * Several tests here are named *_KNOWN_GAP. They assert what the application currently
- * does, not what it arguably should do, so that the suite is green and any change in
- * behaviour is caught. The gaps are reported separately; no production code was changed.
+ * The authorization gaps these tests used to pin as *_KNOWN_GAP are fixed: a
+ * ROLE_ANONYMOUS token no longer reaches admin data, /tariff/pdf/email is no longer
+ * public, and the dead ^/api/v1/auth-test/public rule is gone. The one deliberate
+ * exception - the tariff catalogue the public calculator reads - is asserted below as
+ * intended behaviour rather than as a gap.
  */
 final class SecurityBoundaryTest extends ApiTestCase
 {
     // -----------------------------------------------------------------------
-    // The four PUBLIC_ACCESS rules
+    // The three PUBLIC_ACCESS rules
     // -----------------------------------------------------------------------
 
     #[Test]
@@ -54,33 +58,59 @@ final class SecurityBoundaryTest extends ApiTestCase
     }
 
     /**
-     * The ^/api/v1/tariff/pdf rule is a PREFIX, so it also exposes the /email variant:
-     * unauthenticated mail sending, with an attachment, to an arbitrary recipient.
-     * Reported as a finding.
+     * The public rule is anchored to /tariff/pdf exactly, so the /email variant - which
+     * makes the service send mail with an attachment to an arbitrary recipient - is no
+     * longer reachable without a token.
      */
     #[Test]
-    public function tariffPdfEmailIsAlsoPublicBecauseTheRuleIsAPrefix_KNOWN_GAP(): void
+    public function tariffPdfEmailRequiresAToken(): void
     {
         $this->request('POST', '/api/v1/tariff/pdf/email', ['recipientEmail' => 'someone@example.test']);
 
-        self::assertNotSame(Response::HTTP_UNAUTHORIZED, $this->statusCode());
+        self::assertSame(Response::HTTP_UNAUTHORIZED, $this->statusCode());
     }
 
     /**
-     * The fourth PUBLIC_ACCESS rule, ^/api/v1/auth-test/public, matches no route at all -
-     * "auth-test" appears nowhere else in the codebase. It is dead configuration, so the
-     * path 404s rather than 401s. Reported as a finding.
+     * The calculator sends the quote PDF by mail with the anonymous token it already
+     * holds, so requiring a token must not require an ADMIN one.
      */
     #[Test]
-    public function theAuthTestPublicRuleIsDeadConfiguration_KNOWN_GAP(): void
+    public function tariffPdfEmailStillWorksForTheCalculatorsAnonymousToken(): void
     {
-        $this->request('GET', '/api/v1/auth-test/public');
-
-        self::assertSame(
-            Response::HTTP_NOT_FOUND,
-            $this->statusCode(),
-            'The rule grants public access to a path that has no route.'
+        $this->request(
+            'POST',
+            '/api/v1/tariff/pdf/email',
+            ['recipientEmail' => 'someone@example.test'],
+            $this->anonymousToken()
         );
+
+        self::assertNotSame(Response::HTTP_UNAUTHORIZED, $this->statusCode());
+        self::assertNotSame(Response::HTTP_FORBIDDEN, $this->statusCode());
+    }
+
+    /**
+     * ^/api/v1/auth-test/public granted public access to a path with no route behind it.
+     *
+     * The rule is deleted. This cannot be asserted over HTTP: RouterListener runs at
+     * priority 32 and the firewall at 8, so a path with no route 404s during routing
+     * either way. The assertion is therefore on the configuration itself - a rule
+     * matching a path that has no route is dead weight that a future route could
+     * silently inherit.
+     */
+    #[Test]
+    public function theDeadAuthTestRuleIsGone(): void
+    {
+        $config = Yaml::parseFile(__DIR__ . '/../../config/packages/security.yaml');
+        $paths = array_column($config['security']['access_control'], 'path');
+
+        self::assertNotEmpty($paths);
+        foreach ($paths as $path) {
+            self::assertStringNotContainsString('auth-test', $path, 'Dead access_control rule is back.');
+        }
+
+        // And the path itself still has no route behind it.
+        $this->request('GET', '/api/v1/auth-test/public');
+        self::assertSame(Response::HTTP_NOT_FOUND, $this->statusCode());
     }
 
     // -----------------------------------------------------------------------
@@ -139,8 +169,8 @@ final class SecurityBoundaryTest extends ApiTestCase
     // -----------------------------------------------------------------------
 
     /**
-     * UserManagementController is the only controller in the application carrying
-     * #[IsGranted('ROLE_ADMIN')]. This is the one genuine role boundary.
+     * UserManagementController was the only controller carrying #[IsGranted('ROLE_ADMIN')]
+     * before the admin surface was locked down; every admin controller carries one now.
      */
     #[Test]
     public function userManagementRejectsAValidNonAdminToken(): void
@@ -168,33 +198,145 @@ final class SecurityBoundaryTest extends ApiTestCase
     }
 
     /**
-     * Every other /admin route relies on IS_AUTHENTICATED_FULLY alone. A ROLE_ANONYMOUS
-     * token - which anybody can mint unauthenticated at /api/v1/auth/anonymous - is
-     * therefore enough to reach admin data. Reported as a finding.
+     * The admin surface, which is spread over three unrelated URL prefixes. Anybody can
+     * mint a ROLE_ANONYMOUS token unauthenticated at /api/v1/auth/anonymous, so a valid
+     * token must not be enough to reach any of these.
+     *
+     * The tariff catalogue read is deliberately absent: see
+     * theTariffCatalogueStaysReadableWithAnAnonymousToken() below.
      *
      * @return iterable<string, array{string, string}>
      */
-    public static function adminRoutesWithoutRoleChecks(): iterable
+    public static function adminRoutes(): iterable
     {
-        yield 'tariff presets' => ['GET', '/api/v1/insurance-policies/admin/tariff-presets'];
         yield 'tariff preset clauses' => ['GET', '/api/v1/insurance-policies/admin/tariff-preset-clauses'];
         yield 'insurance clauses' => ['GET', '/api/v1/insurance-policies/admin/insurance-clauses'];
         yield 'app configs' => ['GET', '/api/v1/app-configs/admin'];
         yield 'promotional codes' => ['GET', '/api/v1/admin/promotional-codes'];
         yield 'policy list' => ['GET', '/api/v1/insurance-policies/admin/policies'];
         yield 'user list' => ['GET', '/api/v1/admin/users'];
+        yield 'profile' => ['GET', '/api/v1/admin/profile'];
     }
 
-    #[DataProvider('adminRoutesWithoutRoleChecks')]
+    #[DataProvider('adminRoutes')]
     #[Test]
-    public function adminRoutesAcceptAnAnonymousToken_KNOWN_GAP(string $method, string $uri): void
+    public function adminRoutesRejectAnAnonymousToken(string $method, string $uri): void
     {
         $this->request($method, $uri, null, $this->anonymousToken());
 
         self::assertSame(
+            Response::HTTP_FORBIDDEN,
+            $this->statusCode(),
+            sprintf('%s %s must not be reachable with a ROLE_ANONYMOUS token.', $method, $uri)
+        );
+    }
+
+    /**
+     * ROLE_AGENT and ROLE_OFFICE users exist and cannot obtain a token from
+     * /admin/auth/login today, but a token signed for one must not open the admin API
+     * either - that login check is not the boundary, this is.
+     */
+    #[DataProvider('adminRoutes')]
+    #[Test]
+    public function adminRoutesRejectAValidNonAdminToken(string $method, string $uri): void
+    {
+        $this->request($method, $uri, null, $this->agentToken());
+
+        self::assertSame(
+            Response::HTTP_FORBIDDEN,
+            $this->statusCode(),
+            sprintf('%s %s must not be reachable with a ROLE_AGENT token.', $method, $uri)
+        );
+    }
+
+    #[DataProvider('adminRoutes')]
+    #[Test]
+    public function adminRoutesAcceptAnAdminToken(string $method, string $uri): void
+    {
+        $this->request($method, $uri, null, $this->adminToken());
+
+        self::assertSame(
             Response::HTTP_OK,
             $this->statusCode(),
-            sprintf('%s %s is reachable with a ROLE_ANONYMOUS token.', $method, $uri)
+            sprintf('%s %s must stay open to ROLE_ADMIN.', $method, $uri)
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // The one deliberate exception: the public calculator's catalogue read
+    // -----------------------------------------------------------------------
+
+    /**
+     * propcalc-client's covered-risks step reads the tariff catalogue with the anonymous
+     * token it mints on page load. The payload is the public price list, so this read -
+     * and only this read - stays open to any authenticated caller. Locking it would take
+     * the live quote flow down.
+     */
+    #[Test]
+    public function theTariffCatalogueStaysReadableWithAnAnonymousToken(): void
+    {
+        $this->request('GET', '/api/v1/insurance-policies/admin/tariff-presets', null, $this->anonymousToken());
+
+        self::assertSame(Response::HTTP_OK, $this->statusCode());
+    }
+
+    /**
+     * The same catalogue under a name that does not read as admin. The client can move
+     * to this route whenever it is redeployed; the exception above goes with it.
+     */
+    #[Test]
+    public function theCatalogueIsAlsoServedUnderAPublicFacingName(): void
+    {
+        $this->request('GET', '/api/v1/form-data/tariff-presets', null, $this->anonymousToken());
+
+        self::assertSame(Response::HTTP_OK, $this->statusCode());
+    }
+
+    #[Test]
+    public function bothCatalogueRoutesReturnTheSamePayload(): void
+    {
+        $query = '?area_sq_meters=150';
+
+        $this->request('GET', '/api/v1/insurance-policies/admin/tariff-presets' . $query, null, $this->anonymousToken());
+        $viaAdminPath = $this->jsonResponse();
+
+        $this->request('GET', '/api/v1/form-data/tariff-presets' . $query, null, $this->anonymousToken());
+
+        self::assertSame($viaAdminPath, $this->jsonResponse());
+    }
+
+    #[Test]
+    public function theCatalogueRoutesStillRequireAToken(): void
+    {
+        $this->request('GET', '/api/v1/form-data/tariff-presets');
+
+        self::assertSame(Response::HTTP_UNAUTHORIZED, $this->statusCode());
+    }
+
+    /**
+     * Reading the catalogue is open; changing it is not. The access_control exception is
+     * anchored and method-scoped, and each write carries its own #[IsGranted].
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function tariffPresetWrites(): iterable
+    {
+        yield 'create preset' => ['POST', '/api/v1/insurance-policies/admin/tariff-presets'];
+        yield 'update preset' => ['PUT', '/api/v1/insurance-policies/admin/tariff-presets/1'];
+        yield 'delete preset' => ['DELETE', '/api/v1/insurance-policies/admin/tariff-presets/1'];
+        yield 'update preset clause' => ['PUT', '/api/v1/insurance-policies/admin/tariff-preset-clauses/1'];
+    }
+
+    #[DataProvider('tariffPresetWrites')]
+    #[Test]
+    public function tariffPresetWritesRejectAnAnonymousToken(string $method, string $uri): void
+    {
+        $this->request($method, $uri, ['name' => 'Injected'], $this->anonymousToken());
+
+        self::assertSame(
+            Response::HTTP_FORBIDDEN,
+            $this->statusCode(),
+            sprintf('%s %s must not be reachable with a ROLE_ANONYMOUS token.', $method, $uri)
         );
     }
 }

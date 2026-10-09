@@ -33,6 +33,42 @@ class TariffPresetService
     }
 
     /**
+     * The catalogue as the quote form needs it: presets for the location, optionally
+     * narrowed to those whose building sum insured covers the property area.
+     *
+     * Serves both the legacy admin-namespaced route and the public
+     * /api/v1/form-data/tariff-presets, so the two cannot drift apart.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getTariffPresetsForQuote(
+        ?int $settlementId = null,
+        ?int $distanceToWaterId = null,
+        int $areaSqMeters = 0
+    ): array {
+        $data = $this->getTariffPresets($settlementId, $distanceToWaterId);
+
+        if ($areaSqMeters <= 0) {
+            return $data;
+        }
+
+        // Keep presets whose FIRST clause (the building sum insured) is at least
+        // area * 1000, then cap the list at five.
+        return array_slice(
+            array_values(
+                array_filter($data, function (array $item) use ($areaSqMeters) {
+                    return !empty($item['tariff_preset_clauses'])
+                        && is_array($item['tariff_preset_clauses'])
+                        && isset($item['tariff_preset_clauses'][0]['tariff_amount'])
+                        && ((int) $item['tariff_preset_clauses'][0]['tariff_amount']) >= $areaSqMeters * 1000;
+                })
+            ),
+            0,
+            5
+        );
+    }
+
+    /**
      * Get a list of tariff presets with their clauses
      */
     public function getTariffPresets(?int $settlementId = null, ?int $distanceToWaterId = null): array
@@ -84,6 +120,10 @@ class TariffPresetService
                     $lineTotal = 1.02;
                 }
 
+                // Round once, here, and use the same value for display and for the sum.
+                // The premium is the sum of the lines the customer is shown.
+                $lineTotal = round($lineTotal, 2);
+
                 $presetData['tariff_preset_clauses'][] = [
                     'id' => $clause->getId(),
                     'insurance_clause' => [
@@ -101,9 +141,9 @@ class TariffPresetService
             }
 
             // Calculate totals
-            $totalPremium = 0;
+            $totalPremium = 0.0;
             foreach ($presetData['tariff_preset_clauses'] as $clause) {
-                $totalPremium += (float) str_replace(',', '', $clause['line_total']);
+                $totalPremium += (float) $clause['line_total'];
             }
 
             $presetData['statistics'] = $this->calculatePremiumBreakdown(
@@ -161,7 +201,9 @@ class TariffPresetService
                 $lineTotal = 1.02;
             }
 
-            $totalPremium += $lineTotal;
+            // Rounded per line, exactly as the preset path does, so the same basket
+            // prices identically whichever entry point built it.
+            $totalPremium += round($lineTotal, 2);
         }
 
         return [
@@ -227,11 +269,21 @@ class TariffPresetService
         ];
     }
 
+    /**
+     * Rounds at every step, so the printed parts always add up to the printed total.
+     *
+     * This is deliberately the same arithmetic as StatisticsService::calculate() and as
+     * the client's calc-statistics.js, which is what the customer is actually charged
+     * and what the policy PDF and confirmation email state. Deriving the total from
+     * unrounded intermediates instead put this breakdown a cent away from the charged
+     * figure on roughly a quarter of quotes.
+     */
     private function calculatePremiumBreakdown(float $totalPremium, float $discountPercent, float $taxPercent): array
     {
-        $discountedPremium = $totalPremium * (1 - $discountPercent / 100);
-        $taxAmount = $discountedPremium * ($taxPercent / 100);
-        $totalAmount = $discountedPremium + $taxAmount;
+        $totalPremium = round($totalPremium, 2);
+        $discountedPremium = round($totalPremium * (1 - $discountPercent / 100), 2);
+        $taxAmount = round($discountedPremium * ($taxPercent / 100), 2);
+        $totalAmount = round($discountedPremium + $taxAmount, 2);
 
         return [
             'total_premium' => number_format($totalPremium, 2, '.', ''),

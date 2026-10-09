@@ -12,9 +12,11 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/v1/insurance-policies/admin/insurance-clauses', name: 'api_v1_insurance_policies_admin_insurance_clauses_')]
+#[IsGranted('ROLE_ADMIN')]
 class InsuranceClauseController extends AbstractController
 {
     use ValidatesEntities;

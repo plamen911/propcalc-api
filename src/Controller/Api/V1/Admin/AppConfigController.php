@@ -13,9 +13,11 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/v1/app-configs/admin', name: 'api_v1_app_configs_admin_')]
+#[IsGranted('ROLE_ADMIN')]
 class AppConfigController extends AbstractController
 {
     use ValidatesEntities;

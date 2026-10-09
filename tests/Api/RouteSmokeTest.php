@@ -56,26 +56,22 @@ final class RouteSmokeTest extends ApiTestCase
     }
 
     /**
-     * Routes that currently DO return a 500. These are real production bugs, left
-     * unfixed on purpose and reported separately. They are pinned here so the suite
-     * stays green and so that fixing one makes this test fail, prompting its removal
-     * from the list.
+     * Routes that currently DO return a 500: real production bugs pinned here so the
+     * suite stays green, and so that fixing one makes this test fail and prompts its
+     * removal from the list.
+     *
+     * The list is empty. Both original entries are fixed:
+     *
+     *  - GET /policies/stats was shadowed by /policies/{id}, which had no requirements,
+     *    so "stats" matched as an id and view() died on a TypeError. {id} is now
+     *    constrained to \d+; see PolicyStatsRouteTest.
+     *  - POST /tariff-presets wrote an unvalidated payload straight to the database and
+     *    died on a NOT NULL violation. It answers 422 with field errors now; see
+     *    TariffPresetCreateValidationTest.
      *
      * @var array<string, string>
      */
-    private const KNOWN_SERVER_ERRORS = [
-        // The /policies/{id} route is declared before /policies/stats and has no
-        // requirements, so "stats" is matched as {id}:
-        // TypeError: view(): Argument #1 ($id) must be of type int, string given.
-        // The stats endpoint is unreachable.
-        'GET /api/v1/insurance-policies/admin/policies/stats' =>
-            'Shadowed by /policies/{id}; the stats endpoint cannot be reached.',
-
-        // createTariffPreset() writes straight to the database without validating the
-        // payload: NotNullConstraintViolationException, Column 'name' cannot be null.
-        'POST /api/v1/insurance-policies/admin/tariff-presets' =>
-            'A create with a missing name is not validated and reaches the database.',
-    ];
+    private const KNOWN_SERVER_ERRORS = [];
 
     #[DataProvider('apiRoutes')]
     #[Test]
