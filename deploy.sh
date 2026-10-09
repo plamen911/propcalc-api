@@ -138,7 +138,7 @@ info "Remote OK: ${DEPLOY_PATH}, PHP $(remote "$DEPLOY_PHP -r 'echo PHP_VERSION;
 # rsync never deletes, so a migration removed from the repo lingers on the server
 # and doctrine:migrations:migrate would still try to run it. Refuse up front.
 REF_MIGRATIONS="$(git ls-tree --name-only "$REF_SHA" migrations/ | grep -E '\.php$' | xargs -n1 basename | sort)"
-REMOTE_MIGRATIONS="$(remote "cd '$DEPLOY_PATH/migrations' 2>/dev/null && ls -1 *.php 2>/dev/null" | sort || true)"
+REMOTE_MIGRATIONS="$(remote "cd '$DEPLOY_PATH/migrations' 2>/dev/null && ls -1 *.php 2>/dev/null" 2>/dev/null | sort || true)"
 STALE_MIGRATIONS="$(comm -13 <(printf '%s\n' "$REF_MIGRATIONS") <(printf '%s\n' "$REMOTE_MIGRATIONS") | grep . || true)"
 if [ -n "$STALE_MIGRATIONS" ]; then
     MSG="Server has migration files that ${REF_SHA} does not:
