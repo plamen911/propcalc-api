@@ -41,6 +41,14 @@ php bin/console app:seed-nationalities
 # Create admin user
 php bin/console app:create-user
 
+# Maintenance
+php bin/console app:purge-anonymous-users --dry-run   # anonymous users older than 7 days (--older-than N, --include-undated)
+php bin/console app:remove-duplicate-settlements
+
+# Tests (see tests/README.md)
+composer test:setup       # once: throwaway JWT keys in var/jwt/ + propcalc_test DB via .env.test.local
+composer test             # full suite; or vendor/bin/phpunit --testsuite Unit|Integration|Api
+
 # Clear cache
 php bin/console cache:clear
 
@@ -64,18 +72,31 @@ Production: `teodor81@91.215.216.12:22022`, `/home/teodor81/propcalc.zastrahovai
 - **rsync never deletes.** A file removed from the repo stays on the server. The preflight refuses to deploy if the server has migration files the ref doesn't. If that happens, move the stale file out of `migrations/` on the server.
 - **`sync-prod-db.sh`** streams `mysqldump` from prod over SSH (prod credentials are resolved on the server and never leave it). It imports into the local Homebrew MySQL 8.4 from `.env`'s `DATABASE_URL`, rewriting MariaDB-only bits in the stream. It refuses non-local hosts and `*_test` databases.
 - Both scripts need SSH key access to the prod host. Neither stores credentials.
+- The deploy ends with a smoke test (`POST /api/v1/auth/anonymous` through the live site must return 200).
+- Email goes through Brevo (`MAILER_DSN` in the server's `.env`). The Brevo account restricts API calls to authorized IPs; prod sends from `79.124.30.10`.
+
+## Testing
+
+- PHPUnit suites: `tests/Unit` (no kernel), `tests/Integration` (kernel + seeded DB), `tests/Api` (full HTTP). Shared helpers in `tests/Support/`.
+- `tests/bootstrap.php` rebuilds and seeds the test schema (`app:seed-all`) only when fixtures could have changed; `TEST_DB_REBUILD=1` forces it. It refuses any DB not ending in `_test`. Each test runs in a rolled-back transaction (`dama/doctrine-test-bundle`).
+- Safety rails, enforced by `EnvironmentGuardTest`: `MAILER_DSN=null://null`, JWT keys from `var/jwt/` (never `config/jwt/`), outbound HTTP blocked by `NoNetworkStreamWrapper`.
+- Tests suffixed `*_KNOWN_GAP` pin current, known-wrong behaviour. When fixing one, flip it to assert the correct behaviour and drop the suffix — never delete it.
+- CI: `.github/workflows/tests.yml` runs the suite on PHP 8.2 and 8.4 against MySQL 8.4.
 
 ## Architecture
 
 ### API Structure
 - **Public API** (`/api/v1/`): Client-facing endpoints for settlements, insurance policies, form data, promotional codes
-- **Admin API** (`/api/v1/admin/`): Protected endpoints for managing policies, clauses, tariffs, users, and app config
+- **Admin API**: spread over three prefixes — `/api/v1/admin/`, `/api/v1/insurance-policies/admin/`, `/api/v1/app-configs/admin/` — for managing policies, clauses, tariffs, users, promo codes and app config
 
 ### Authentication
 - JWT-based authentication using `lexik/jwt-authentication-bundle`
 - Anonymous tokens available at `/api/v1/auth/anonymous`
 - Admin login at `/api/v1/admin/auth/login`
-- All API routes require authentication except explicitly public endpoints (see `config/packages/security.yaml`)
+- Public (no token): `/api/v1/auth/anonymous`, `/api/v1/admin/auth/login`, `POST /api/v1/tariff/pdf` (exact path; `/tariff/pdf/email` needs a token)
+- All three admin prefixes require `ROLE_ADMIN` in `access_control`, and each admin controller repeats it with `#[IsGranted]`. Anonymous tokens carry `ROLE_ANONYMOUS` + `ROLE_USER`.
+- Everything else under `/api` needs any valid token. One deliberate exception: `GET /api/v1/insurance-policies/admin/tariff-presets` is open to anonymous tokens for the public calculator; `GET /api/v1/form-data/tariff-presets` serves the same payload and is the replacement.
+- `access_control` paths are regexes — anchor with `$` when an exact match is meant; an unanchored prefix covers every path below it.
 
 ### Core Domain Entities
 - **InsurancePolicy**: Main policy entity with insurer details, property info, financial calculations
@@ -83,16 +104,17 @@ Production: `teodor81@91.215.216.12:22022`, `/home/teodor81/propcalc.zastrahovai
 - **TariffPreset**: Predefined tariff packages containing multiple clauses
 - **TariffPresetClause**: Junction table linking presets to clauses with amounts
 - **Settlement**: Geographic locations with earthquake zone associations
-- ~20 entities total, ~20 repositories
+- **User**: admins and anonymous users (one row per anonymous token; `created_at` lets `app:purge-anonymous-users` age them out)
+- 20 entities, 20 repositories
 
 ### Key Services
 - **TariffPresetService** (`src/Service/TariffPresetService.php`): Calculates insurance premiums with earthquake zone adjustments, flood zone filtering, discounts, and taxes
 - **StatisticsService** (`src/Service/StatisticsService.php`): Computes policy statistics (premium amounts, discounts, tax, totals)
-- **EmailService** (`src/Service/EmailService.php`): Sends order confirmation emails
-- **PdfService** (`src/Service/PdfService.php`): Generates policy PDF documents
+- **EmailService** (`src/Service/EmailService.php`): Sends order confirmation emails and tariff offer PDFs
+- **PdfService** (`src/Service/PdfService.php`): Generates policy and tariff offer PDF documents
 
 ### Other Key Files
-- `src/Controller/Trait/ValidatesEntities.php` — shared validation error formatting trait
+- `src/Controller/Trait/ValidatesEntities.php` — shared validation error formatting trait (`validationErrors()` → 400 flat list; `fieldValidationErrors()` → 422 field map)
 - `src/EventListener/CorsListener.php` — CORS handling for all API responses
 - `src/Constants/AppConstants.php` — company name, admin email constants
 
@@ -102,8 +124,9 @@ Production: `teodor81@91.215.216.12:22022`, `/home/teodor81/propcalc.zastrahovai
 - Policy codes are auto-generated with format: P + zeros + ID + date + daily count
 - App configs store system-wide values (TAX_PERCENTS, DISCOUNT_PERCENTS, EARTHQUAKE_ID, FLOOD_*_ID, CURRENCY)
 
-### Related Frontend
+### Related Frontends
 - **Admin panel**: `/Applications/MAMP/htdocs/reactjs/procalc-admin/src` (React)
+- **Public calculator**: `/Applications/MAMP/htdocs/reactjs/propcalc-client` (React), live at https://propcalc-dy7.pages.dev/
 
 ## Coding Conventions
 
@@ -120,7 +143,7 @@ Admin panel sends **camelCase** field names for User/PromotionalCode endpoints, 
 
 ### Error Response Formats
 
-Three formats coexist — **match the existing format in the controller you're editing.**
+Three formats coexist — **match the existing format in the controller you're editing.** The `errors` envelope has two shapes: a flat list (400, entity constraint violations) or a field => messages map (422, payload checks before an entity is populated, e.g. tariff preset create).
 
 | Format | Used by | Example |
 |--------|---------|---------|
