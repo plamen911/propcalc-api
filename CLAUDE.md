@@ -73,6 +73,7 @@ Production: `teodor81@91.215.216.12:22022`, `/home/teodor81/propcalc.zastrahovai
 - **`sync-prod-db.sh`** streams `mysqldump` from prod over SSH (prod credentials are resolved on the server and never leave it). It imports into the local Homebrew MySQL 8.4 from `.env`'s `DATABASE_URL`, rewriting MariaDB-only bits in the stream. It refuses non-local hosts and `*_test` databases.
 - Both scripts need SSH key access to the prod host. Neither stores credentials.
 - The deploy ends with a smoke test (`POST /api/v1/auth/anonymous` through the live site must return 200).
+- Cron on prod (user crontab, not in the repo): `app:purge-anonymous-users` daily at 03:30 with PHP 8.3, logging to `var/log/purge-anonymous-users.log`. Edit with `crontab -e` over SSH; the same crontab also runs the v3.zastrahovaite.com Laravel scheduler and a Softaculous backup — leave those alone.
 - Email goes through Brevo (`MAILER_DSN` in the server's `.env`). The Brevo account restricts API calls to authorized IPs; prod sends from `79.124.30.10`.
 
 ## Testing
