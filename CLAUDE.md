@@ -46,7 +46,24 @@ php bin/console cache:clear
 
 # Generate JWT keys
 ./generate_jwt_keys.sh
+
+# Deploy to production (rsync/SSH; preview + "yes" prompt)
+./deploy.sh -n            # dry run: show what would change
+./deploy.sh               # deploy HEAD
+./deploy.sh --ref <tag>   # deploy a specific ref; --no-migrate to skip migrations
+
+# Replace the local DB with a copy of production (DROPs the local DB)
+./sync-prod-db.sh
 ```
+
+## Deployment
+
+Production: `teodor81@91.215.216.12:22022`, `/home/teodor81/propcalc.zastrahovaite.com`, PHP `/usr/local/php8.4/bin/php`, MariaDB 10.6.
+
+- **`deploy.sh`** ships a clean `git archive` of the ref (only tracked files), minus `deploy-excludes.txt`. Then, on the server, it runs `composer.phar install --no-dev` and `doctrine:migrations:migrate`. `vendor/`, `var/`, `.env*`, `config/jwt/` and `public/.htaccess` are server-owned and never uploaded.
+- **rsync never deletes.** A file removed from the repo stays on the server. The preflight refuses to deploy if the server has migration files the ref doesn't. If that happens, move the stale file out of `migrations/` on the server.
+- **`sync-prod-db.sh`** streams `mysqldump` from prod over SSH (prod credentials are resolved on the server and never leave it). It imports into the local Homebrew MySQL 8.4 from `.env`'s `DATABASE_URL`, rewriting MariaDB-only bits in the stream. It refuses non-local hosts and `*_test` databases.
+- Both scripts need SSH key access to the prod host. Neither stores credentials.
 
 ## Architecture
 
