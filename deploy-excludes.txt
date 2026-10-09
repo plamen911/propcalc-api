@@ -1,0 +1,68 @@
+# rsync exclude list for deploying this app to the icnhost production host.
+# Read by ./deploy.sh.
+#
+# Pattern semantics (rsync/openrsync):
+#   - a LEADING slash anchors the pattern to the transfer root
+#   - a pattern with no slash matches a name at ANY depth
+# The app-level directories below MUST stay anchored: a bare `docs/` would also
+# swallow public/docs/ (tracked PDFs the API serves), and a bare `.htaccess`
+# would match at every depth.
+
+# --- deliberately not uploaded / server-owned runtime -----------------------
+# Dependencies are installed on the server instead (composer.phar is there).
+/vendor/
+/var/
+/.env
+/.env.local
+/.env.local.php
+/.env.*.local
+# JWT keys are generated per environment and live only on the server.
+/config/jwt/
+# Generated on the server by `assets:install` (composer auto-scripts).
+/public/bundles/
+
+# --- server-owned: managed by cPanel/the host, never overwrite --------------
+/.htaccess
+/php*.fcgi
+/php*-fcgi.ini
+/cgi-bin/
+/.well-known/
+/error_log
+/php_errorlog
+/.ftpquota
+# May carry cPanel PHP-handler lines on prod; the tracked copy is for local dev.
+public/.htaccess
+public/.well-known/
+public/error_log
+
+# --- never ship, even if rsync is pointed at a working tree ------------------
+# deploy.sh sources a `git archive` export, so untracked files are already
+# absent there. But a human may one day aim rsync at the working directory — in
+# which case these lines are the only thing standing between local secrets and
+# the server. Keep them.
+/.git/
+/.idea/
+/.claude/
+/.remember/
+/.github/
+/myreadme.md
+/requests/
+/specs/
+/tests/
+/.env.dev
+/.env.test
+/.phpunit.cache/
+/.phpunit.result.cache
+# The server keeps its own copy.
+/composer.phar
+
+# --- dev-only, no purpose on the server -------------------------------------
+.DS_Store
+/*.md
+/phpunit.dist.xml
+/phpunit.xml
+/bin/phpunit
+/bin/setup-test-db.sh
+/generate_jwt_keys.sh
+/deploy.sh
+/deploy-excludes.txt
