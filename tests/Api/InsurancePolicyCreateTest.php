@@ -340,4 +340,92 @@ final class InsurancePolicyCreateTest extends ApiTestCase
         // MAILER_DSN is null://null: the message is collected, never transmitted.
         self::assertGreaterThanOrEqual(1, count(self::getMailerMessages()));
     }
+
+    // -----------------------------------------------------------------------
+    // Custom package ("Пакет по избор")
+    // -----------------------------------------------------------------------
+
+    /**
+     * @return array<int, float> insurance_clause_id => tariff_amount
+     */
+    private function storedClauseAmounts(): array
+    {
+        $out = [];
+        foreach ($this->jsonResponse()['insurance_policy_clauses'] as $clause) {
+            $out[(int) $clause['insurance_clause_id']] = (float) $clause['tariff_amount'];
+        }
+
+        return $out;
+    }
+
+    #[Test]
+    public function aCustomPackageKeepsTheChosenInsuredSums(): void
+    {
+        $this->post($this->validPayload(['tariff_amounts' => ['1' => '100000', '2' => '20000', '6' => '', '14' => '76.69']]));
+
+        self::assertSame(Response::HTTP_CREATED, $this->statusCode());
+        self::assertSame('Пакет по избор', $this->jsonResponse()['tariff_preset_name']);
+
+        $amounts = $this->storedClauseAmounts();
+        self::assertSame(100000.0, $amounts[1]);
+        self::assertSame(20000.0, $amounts[2]);
+        self::assertSame(76.69, $amounts[14]);
+        self::assertSame(0.0, $amounts[6], 'A clause sent empty was not chosen.');
+    }
+
+    #[Test]
+    public function aClauseThatWasNotChosenIsStoredAsZeroNotAsItsRate(): void
+    {
+        // Clause 14 has a fixed premium of 2 in the seed data. It used to be stored as the
+        // insured sum of every custom order that did not send it.
+        $this->post($this->validPayload(['tariff_amounts' => ['1' => '100000']]));
+
+        self::assertSame(Response::HTTP_CREATED, $this->statusCode());
+
+        $amounts = $this->storedClauseAmounts();
+        self::assertSame(100000.0, $amounts[1]);
+        self::assertSame(0.0, $amounts[14]);
+        self::assertSame([1], array_keys(array_filter($amounts)));
+    }
+
+    #[Test]
+    public function aCustomPackageWithoutAmountsStoresNoCoverage(): void
+    {
+        $this->post($this->validPayload());
+
+        self::assertSame(Response::HTTP_CREATED, $this->statusCode());
+        self::assertSame([], array_filter($this->storedClauseAmounts()));
+    }
+
+    #[Test]
+    public function theStatisticsFieldNameIsAcceptedToo(): void
+    {
+        $this->post($this->validPayload(['custom_clause_amounts' => ['1' => '150000']]));
+
+        self::assertSame(Response::HTTP_CREATED, $this->statusCode());
+        self::assertSame(150000.0, $this->storedClauseAmounts()[1]);
+    }
+
+    #[Test]
+    public function aNegativeOrNonNumericClauseAmountIsRejected(): void
+    {
+        $this->post($this->validPayload(['tariff_amounts' => ['1' => '-5', '2' => 'abc']]));
+
+        self::assertSame(Response::HTTP_BAD_REQUEST, $this->statusCode());
+        $errors = $this->jsonResponse()['errors'];
+        self::assertContains('Невалидна сума за клауза с ID 1.', $errors);
+        self::assertContains('Невалидна сума за клауза с ID 2.', $errors);
+    }
+
+    #[Test]
+    public function aPresetIgnoresPostedClauseAmounts(): void
+    {
+        $preset = $this->em()->getRepository(\App\Entity\TariffPreset::class)->findOneBy([]);
+        self::assertNotNull($preset);
+
+        $this->post($this->validPayload(['tariff_preset_id' => $preset->getId(), 'tariff_amounts' => ['1' => '999999']]));
+
+        self::assertSame(Response::HTTP_CREATED, $this->statusCode());
+        self::assertNotSame(999999.0, $this->storedClauseAmounts()[1] ?? null);
+    }
 }

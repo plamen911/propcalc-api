@@ -191,6 +191,23 @@ class InsurancePolicyController extends AbstractController
             }
         }
 
+        // Validate the clause amounts of a custom package ("Пакет по избор"). The calculator
+        // posts the insured sums it priced, keyed by insurance clause id, as tariff_amounts;
+        // custom_clause_amounts, the name the statistics endpoint uses, is accepted too.
+        $customClauseAmounts = $data['tariff_amounts'] ?? $data['custom_clause_amounts'] ?? [];
+        if (!is_array($customClauseAmounts)) {
+            $errors[] = 'Сумите по клаузи трябва да бъдат списък.';
+            $customClauseAmounts = [];
+        }
+        foreach ($customClauseAmounts as $clauseId => $amount) {
+            if ($amount === '' || $amount === null) {
+                continue;
+            }
+            if (!is_numeric($amount) || (float) $amount < 0) {
+                $errors[] = sprintf('Невалидна сума за клауза с ID %s.', $clauseId);
+            }
+        }
+
         // Validate the money. The client computes subtotal/tax/total and posts them, so
         // these are the figures that get stored and charged - the API only sees the
         // result. A promotional code larger than the premium left after the regular
@@ -470,8 +487,11 @@ class InsurancePolicyController extends AbstractController
                 $this->insurancePolicyClauseRepository->save($policyClause, true);
             }
         } else {
-            // If the selected a custom tariff, loop through insurance_clauses
-            $insuranceClauses = $this->insuranceClauseRepository->findAll();
+            // A custom tariff: one row per active clause, with the insured sum the customer
+            // chose. A clause they did not choose is stored as 0. It used to fall back to the
+            // clause's own tariff_amount, which is a rate or a fixed premium (e.g. 1.02), not
+            // an insured sum, so every custom order listed coverages nobody had picked.
+            $insuranceClauses = $this->insuranceClauseRepository->findBy(['active' => true], ['position' => 'ASC', 'id' => 'ASC']);
             foreach ($insuranceClauses as $position => $insuranceClause) {
                 $policyClause = new InsurancePolicyClause();
                 $policyClause->setInsurancePolicy($insurancePolicy);
@@ -479,13 +499,8 @@ class InsurancePolicyController extends AbstractController
                 $policyClause->setName($insuranceClause->getName());
                 $policyClause->setTariffNumber($insuranceClause->getTariffNumber());
 
-                // Respect user entered tariff_amount
-                $tariffAmount = 0;
-                if (isset($data['tariff_amounts']) && isset($data['tariff_amounts'][$insuranceClause->getId()])) {
-                    $tariffAmount = (float)$data['tariff_amounts'][$insuranceClause->getId()];
-                } else {
-                    $tariffAmount = $insuranceClause->getTariffAmount();
-                }
+                $amount = $customClauseAmounts[$insuranceClause->getId()] ?? $customClauseAmounts[(string) $insuranceClause->getId()] ?? null;
+                $tariffAmount = is_numeric($amount) ? (float) $amount : 0.0;
 
                 $policyClause->setTariffAmount($tariffAmount);
                 $policyClause->setPosition($position + 1);
