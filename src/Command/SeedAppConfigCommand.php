@@ -81,7 +81,7 @@ class SeedAppConfigCommand extends Command
         [
             "id" => 8,
             "name" => "OUR_BROKER_NAME",
-            "value" => "ЗАТРАХОВАЙТЕ С ДАЙКЕ",
+            "value" => "ЗАСТРАХОВАЙТЕ С ДАЙКЕ",
             "name_bg" => "Име на брокер",
             "is_editable" => true,
             "position" => 8
