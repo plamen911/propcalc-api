@@ -23,6 +23,7 @@ use App\Repository\InsuranceClauseRepository;
 use App\Repository\InsurancePolicyClauseRepository;
 use App\Repository\PromotionalCodeRepository;
 use App\Service\EmailService;
+use App\Service\TariffPresetService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -50,6 +51,7 @@ class InsurancePolicyController extends AbstractController
     private ValidatorInterface $validator;
     private EmailService $emailService;
     private AppConfigRepository $appConfigRepository;
+    private TariffPresetService $tariffPresetService;
 
     public function __construct(
         InsurancePolicyRepository $insurancePolicyRepository,
@@ -68,7 +70,8 @@ class InsurancePolicyController extends AbstractController
         PromotionalCodeRepository $promotionalCodeRepository,
         ValidatorInterface        $validator,
         EmailService              $emailService,
-        AppConfigRepository $appConfigRepository
+        AppConfigRepository $appConfigRepository,
+        TariffPresetService $tariffPresetService
     ) {
         $this->insurancePolicyRepository = $insurancePolicyRepository;
         $this->settlementRepository = $settlementRepository;
@@ -87,6 +90,7 @@ class InsurancePolicyController extends AbstractController
         $this->validator = $validator;
         $this->emailService = $emailService;
         $this->appConfigRepository = $appConfigRepository;
+        $this->tariffPresetService = $tariffPresetService;
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
@@ -469,12 +473,17 @@ class InsurancePolicyController extends AbstractController
         // Save the insurance policy again with the generated code
         $this->insurancePolicyRepository->save($insurancePolicy, true);
 
-        // Handle insurance policy clauses
+        // Handle insurance policy clauses. The flood clause that does not apply at this
+        // distance to water is left out, as the calculator leaves it out of the price.
+        $floodClauseIdToSkip = $this->tariffPresetService->floodClauseIdToSkip($distanceToWater->getId());
         if ($tariffPreset) {
             // If the tariff selection is from a preset, loop through tariff_preset_clauses (only active insurance clauses)
             $tariffPresetClauses = $this->tariffPresetClauseRepository->findByTariffPresetWithActiveInsuranceClauses($tariffPreset);
             foreach ($tariffPresetClauses as $tariffPresetClause) {
                 $insuranceClause = $tariffPresetClause->getInsuranceClause();
+                if ($insuranceClause->getId() === $floodClauseIdToSkip) {
+                    continue;
+                }
 
                 $policyClause = new InsurancePolicyClause();
                 $policyClause->setInsurancePolicy($insurancePolicy);
@@ -492,6 +501,10 @@ class InsurancePolicyController extends AbstractController
             // clause's own tariff_amount, which is a rate or a fixed premium (e.g. 1.02), not
             // an insured sum, so every custom order listed coverages nobody had picked.
             $insuranceClauses = $this->insuranceClauseRepository->findBy(['active' => true], ['position' => 'ASC', 'id' => 'ASC']);
+            $insuranceClauses = array_values(array_filter(
+                $insuranceClauses,
+                fn ($insuranceClause) => $insuranceClause->getId() !== $floodClauseIdToSkip
+            ));
             foreach ($insuranceClauses as $position => $insuranceClause) {
                 $policyClause = new InsurancePolicyClause();
                 $policyClause->setInsurancePolicy($insurancePolicy);

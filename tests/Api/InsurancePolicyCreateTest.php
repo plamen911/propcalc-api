@@ -428,4 +428,67 @@ final class InsurancePolicyCreateTest extends ApiTestCase
         self::assertSame(Response::HTTP_CREATED, $this->statusCode());
         self::assertNotSame(999999.0, $this->storedClauseAmounts()[1] ?? null);
     }
+
+    // -----------------------------------------------------------------------
+    // Flood clauses follow the distance to water (seed: FLOOD_LT_500_M_ID = 4,
+    // FLOOD_GT_500_M_ID = 5; distance 1 = up to 500 m, 2 = over 500 m)
+    // -----------------------------------------------------------------------
+
+    /**
+     * @return list<int>
+     */
+    private function storedClauseIds(): array
+    {
+        return array_keys($this->storedClauseAmounts());
+    }
+
+    private function presetWithBothFloodClauses(): \App\Entity\TariffPreset
+    {
+        foreach ($this->em()->getRepository(\App\Entity\TariffPreset::class)->findAll() as $preset) {
+            $clauseIds = array_map(
+                fn ($tpc) => $tpc->getInsuranceClause()->getId(),
+                $preset->getTariffPresetClauses()->toArray()
+            );
+            if (in_array(4, $clauseIds, true) && in_array(5, $clauseIds, true)) {
+                return $preset;
+            }
+        }
+        self::fail('The seed data has no preset with both flood clauses.');
+    }
+
+    /**
+     * @return iterable<string, array{int, int, int}>
+     */
+    public static function floodDistances(): iterable
+    {
+        yield 'over 500 m drops the up-to-500 m clause' => [2, 5, 4];
+        yield 'up to 500 m drops the over-500 m clause' => [1, 4, 5];
+    }
+
+    #[Test]
+    #[DataProvider('floodDistances')]
+    public function aPresetOrderListsOnlyTheFloodClauseForItsDistance(int $distanceToWaterId, int $kept, int $dropped): void
+    {
+        $preset = $this->presetWithBothFloodClauses();
+
+        $this->post($this->validPayload(['tariff_preset_id' => $preset->getId(), 'distance_to_water_id' => $distanceToWaterId]));
+
+        self::assertSame(Response::HTTP_CREATED, $this->statusCode());
+        self::assertContains($kept, $this->storedClauseIds());
+        self::assertNotContains($dropped, $this->storedClauseIds());
+    }
+
+    #[Test]
+    #[DataProvider('floodDistances')]
+    public function aCustomOrderListsOnlyTheFloodClauseForItsDistance(int $distanceToWaterId, int $kept, int $dropped): void
+    {
+        $this->post($this->validPayload([
+            'distance_to_water_id' => $distanceToWaterId,
+            'tariff_amounts' => ['1' => '100000', '4' => '20000', '5' => '20000'],
+        ]));
+
+        self::assertSame(Response::HTTP_CREATED, $this->statusCode());
+        self::assertSame(20000.0, $this->storedClauseAmounts()[$kept]);
+        self::assertNotContains($dropped, $this->storedClauseIds());
+    }
 }

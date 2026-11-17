@@ -217,6 +217,16 @@ class TariffPresetService
         ];
     }
 
+    /**
+     * The flood clause that does not apply at this distance to water (the "< 500 m" clause
+     * for a property further away, and vice versa), or null when it cannot be resolved.
+     * The calculator prices without it, so an order must not list it either.
+     */
+    public function floodClauseIdToSkip(?int $distanceToWaterId): ?int
+    {
+        return $this->resolveZoneConfig(null, $distanceToWaterId)['floodZoneIdToSkip'];
+    }
+
     private function resolveZoneConfig(?int $settlementId, ?int $distanceToWaterId): array
     {
         $configNames = ['EARTHQUAKE_ID', 'DISCOUNT_PERCENTS', 'TAX_PERCENTS', 'THEFT_DAMAGE_CLAUSE_ID'];
